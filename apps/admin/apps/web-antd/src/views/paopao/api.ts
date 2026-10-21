@@ -7,8 +7,9 @@ export interface PageResult<T> {
 
 export interface PostRow {
   author: null | { nickname: string };
-  board: null | { name: string };
+  board: null | { id: number; name: string };
   content?: string;
+  cover?: null | string;
   created_at: null | string;
   id: number;
   status: string;
@@ -98,6 +99,15 @@ export const paopaoApi = {
       '/auth/me',
     ),
   post: (id: number) => requestClient.get<PostRow>(`/admin/posts/${id}`),
+  updatePost: (
+    id: number,
+    body: {
+      board_id: number;
+      content: string;
+      cover: null | string;
+      title: string;
+    },
+  ) => requestClient.put<PostRow>(`/admin/posts/${id}`, body),
   posts: (params: Record<string, number | string | undefined>) =>
     requestClient.get<PageResult<PostRow>>('/admin/posts', { params }),
   rejectPost: (id: number, reason?: string) =>

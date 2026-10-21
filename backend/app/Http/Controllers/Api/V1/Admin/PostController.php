@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Api\V1\ApiController;
+use App\Http\Requests\Admin\UpdateAdminPostRequest;
+use App\Models\Board;
 use App\Models\Post;
 use App\Support\ApiCode;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +29,33 @@ class PostController extends ApiController
 
     public function show(Post $post): JsonResponse
     {
+        $post->load(['author', 'board']);
+
+        return $this->ok($post->toDetailArray());
+    }
+
+    public function update(UpdateAdminPostRequest $request, Post $post): JsonResponse
+    {
+        $board = Board::query()->find($request->integer('board_id'));
+
+        if (! $board) {
+            throw new ApiException(ApiCode::NOT_FOUND, '版块不存在', 404);
+        }
+
+        $previousBoardId = $post->board_id;
+        $cover = $request->input('cover');
+
+        $post->title = $request->string('title')->toString();
+        $post->content = $request->string('content')->toString();
+        $post->cover = $cover === null || $cover === '' ? null : (string) $cover;
+        $post->board_id = $board->id;
+        $post->save();
+
+        if ($post->status === 'published' && $previousBoardId !== $post->board_id) {
+            $this->refreshPublishedCount($previousBoardId);
+            $this->refreshPublishedCount($post->board_id);
+        }
+
         $post->load(['author', 'board']);
 
         return $this->ok($post->toDetailArray());
@@ -78,5 +107,20 @@ class PostController extends ApiController
         $post->delete();
 
         return $this->ok(null);
+    }
+
+    private function refreshPublishedCount(int $boardId): void
+    {
+        $board = Board::query()->find($boardId);
+
+        if (! $board) {
+            return;
+        }
+
+        $board->post_count = Post::query()
+            ->where('board_id', $boardId)
+            ->where('status', 'published')
+            ->count();
+        $board->save();
     }
 }
