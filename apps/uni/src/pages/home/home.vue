@@ -86,11 +86,6 @@ onPullDownRefresh(async () => {
           <view class="line" />
         </view>
       </view>
-      <template #right>
-        <view class="icon-btn" @click="onSearch">
-          <uni-icons type="search" size="22" color="#16160e" />
-        </view>
-      </template>
     </app-nav>
 
     <view class="search">
@@ -198,14 +193,6 @@ onPullDownRefresh(async () => {
 
 .tab.on .line {
   background: #ff2442;
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .search {

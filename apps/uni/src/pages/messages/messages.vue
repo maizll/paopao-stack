@@ -18,7 +18,11 @@ async function load(): Promise<void> {
     await request<unknown>('/notifications')
     footnote.value = '还没有新的通知。'
   } catch (cause) {
-    footnote.value = cause instanceof ApiError ? cause.message : '通知尚未接入'
+    const raw = cause instanceof ApiError ? cause.message : ''
+    footnote.value =
+      !raw || raw.includes('骨架') || raw.includes('尚未')
+        ? '通知还没开放。帖子有没有通过，去「我的」看笔记状态。'
+        : raw
   }
 }
 
