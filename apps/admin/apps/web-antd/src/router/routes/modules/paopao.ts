@@ -58,6 +58,16 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'PostEdit',
+        path: '/posts/:id/edit',
+        component: () => import('#/views/paopao/posts/edit.vue'),
+        meta: {
+          activePath: '/posts',
+          hideInMenu: true,
+          title: '编辑帖子',
+        },
+      },
+      {
         name: 'Apps',
         path: '/apps',
         component: () => import('#/views/paopao/apps/index.vue'),

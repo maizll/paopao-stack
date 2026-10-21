@@ -212,6 +212,17 @@ class PaopaoApiTest extends TestCase
         $this->withHeader('X-Tenant-Id', $alpha->slug)
             ->withToken($token)
             ->patchJson("/api/v1/admin/posts/{$post->id}", [
+                'title' => '再改一次',
+                'content' => '<h2>小节</h2><p>正文<strong>加粗</strong></p><script>alert(1)</script>',
+                'board_id' => $talk->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.content', '<h2>小节</h2><p>正文<strong>加粗</strong></p>')
+            ->assertJsonPath('data.status', 'pending');
+
+        $this->withHeader('X-Tenant-Id', $alpha->slug)
+            ->withToken($token)
+            ->patchJson("/api/v1/admin/posts/{$post->id}", [
                 'title' => '不该换到别的租户',
                 'content' => '正文',
                 'board_id' => $foreign->id,

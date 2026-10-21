@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateAdminPostRequest;
 use App\Models\Board;
 use App\Models\Post;
 use App\Support\ApiCode;
+use App\Support\HtmlContent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -46,7 +47,7 @@ class PostController extends ApiController
         $cover = $request->input('cover');
 
         $post->title = $request->string('title')->toString();
-        $post->content = $request->string('content')->toString();
+        $post->content = HtmlContent::sanitize($request->string('content')->toString());
         $post->cover = $cover === null || $cover === '' ? null : (string) $cover;
         $post->board_id = $board->id;
         $post->save();

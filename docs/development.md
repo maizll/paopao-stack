@@ -38,7 +38,7 @@ docs/                    开发文档、API 规划、SaaS 约定
 
 ## 前端模板
 
-管理后台直接使用 Vue Vben Admin 5.7.0（仓库 [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin)，在线文档 [vben.pro](https://www.vben.pro)）。`apps/admin` 是这份大仓，保留 `packages/` 与 `apps/web-antd`。官方说明 `web-antd` 不能拆出去单独跑，所以没有再手写一套 Pro 布局。启动命令是 `pnpm dev:antd`。登录页是 `AuthenticationLogin`，框架是 `BasicLayout`，列表页是 `Page` + vxe-table。菜单是概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。这里不渲染社区信息流。帖子审核抽屉用 `GET /api/v1/admin/posts/{id}` 看正文，用 `PUT /api/v1/admin/posts/{id}` 改标题、正文、版块和封面。状态不在编辑里改。
+管理后台直接使用 Vue Vben Admin 5.7.0（仓库 [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin)，在线文档 [vben.pro](https://www.vben.pro)）。`apps/admin` 是这份大仓，保留 `packages/` 与 `apps/web-antd`。官方说明 `web-antd` 不能拆出去单独跑，所以没有再手写一套 Pro 布局。启动命令是 `pnpm dev:antd`。登录页是 `AuthenticationLogin`，框架是 `BasicLayout`，列表页是 `Page` + vxe-table。菜单是概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。这里不渲染社区信息流。帖子审核列表打开抽屉看正文。编辑是独立页 `/posts/:id/edit`，正文用 Vben 自带的 Tiptap（`VbenTiptap`，`@vben/plugins/tiptap`）写成 HTML，经 `PUT /api/v1/admin/posts/{id}` 保存。状态不在编辑页改。
 
 用户端使用 DCloud 官方预设 `uni-preset-vue`（Vite + Vue 3 + TypeScript）和 `@dcloudio/uni-ui`。底部 Tab 是首页、社区、发现、消息、我的。H5 开发端口是 `43126`，`/api` 代理到 Laravel。同一套页面可以再编到 App 和小程序，本轮只跑通 H5。原先的 `apps/web` 已删除。
 
@@ -103,4 +103,4 @@ docs/                    开发文档、API 规划、SaaS 约定
 - 头像上传与对象存储
 - 商城、支付、私信、短视频
 
-本地演示数据里已有已发布帖子、一个示例软件和一组运营位。成员发帖后状态为 `pending`。租户管理员可以先 `PUT /api/v1/admin/posts/{id}` 改正文，再 `POST /api/v1/admin/posts/{id}/approve`，通过后才会出现在公开列表。封面字段是 URL 字符串，没有上传接口。
+本地演示数据里已有已发布帖子、一个示例软件和一组运营位。成员发帖后状态为 `pending`，正文是纯文本。租户管理员在编辑页用 Tiptap 改成 HTML（加粗、标题、列表、链接、按 URL 插图），再 `PUT /api/v1/admin/posts/{id}`。封面字段也是 URL，没有上传接口。`content` 最长 20000 字符，列表摘要用 `strip_tags`。通过后用户端详情用富文本渲染 HTML，纯文本帖子仍按原文显示。

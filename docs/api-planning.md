@@ -493,7 +493,7 @@
 | GET/POST/PATCH/DELETE | `/admin/boards`… | 版块维护 | 内容权限 | MVP |
 | GET | `/admin/posts` | 待审/全部帖 | 内容权限 | MVP |
 | GET | `/admin/posts/{id}` | 审核详情（含正文、封面） | 内容权限 | MVP |
-| PUT/PATCH | `/admin/posts/{id}` | 编辑标题、正文、版块、封面。不接受 `status`，状态只走通过/拒绝 | 内容权限 | MVP |
+| PUT/PATCH | `/admin/posts/{id}` | 编辑标题、正文、版块、封面。正文是 HTML 字符串（富文本）。不接受 `status`，状态只走通过/拒绝。入库时去掉 `script` 等标签 | 内容权限 | MVP |
 | POST | `/admin/posts/{id}/approve` | 过审 | 内容权限 | MVP |
 | POST | `/admin/posts/{id}/reject` | 拒审 | 内容权限 | MVP |
 | GET/POST/PATCH | `/admin/apps`… | 软件维护 | 商店权限 | MVP |
@@ -588,6 +588,7 @@
 | 2026-10-21 | 0.1 | 首版 API 规划：14 模块、原则与扩展规则；作者 软件库 |
 | 2026-10-21 | 0.1.1 | 落入仓库 `docs/api-planning.md`；对齐路径改为 `docs/development.md`。全局契约未改 |
 | 2026-10-21 | 0.1.2 | Admin 帖子增加 `PUT/PATCH /admin/posts/{id}`：改标题、正文、版块、封面。状态仍只由通过/拒绝改变。响应壳未改 |
+| 2026-10-21 | 0.1.3 | 管理端正文约定为 HTML，列表摘要仍 `strip_tags`。保存时去掉 script/iframe 和 `javascript:` 链接。响应壳未改 |
 
 ---
 

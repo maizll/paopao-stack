@@ -2,11 +2,12 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
-import { reactive, ref } from 'vue';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
 
-import { Button, Drawer, Form, Input, message, Modal, Select, Tag } from 'ant-design-vue';
+import { Button, Drawer, Input, message, Modal, Tag } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 
@@ -14,25 +15,15 @@ import {
   formatTime,
   paopaoApi,
   postStatusText,
-  type BoardRow,
   type PostRow,
 } from '../api';
 
+const router = useRouter();
 const open = ref(false);
-const editing = ref(false);
-const saving = ref(false);
 const detail = ref<null | PostRow>(null);
-const boards = ref<BoardRow[]>([]);
 const rejectOpen = ref(false);
 const rejectId = ref(0);
 const reason = ref('');
-
-const form = reactive({
-  board_id: undefined as number | undefined,
-  content: '',
-  cover: '',
-  title: '',
-});
 
 const formOptions: VbenFormProps = {
   schema: [
@@ -86,59 +77,17 @@ const gridOptions: VxeTableGridOptions<PostRow> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-function fillForm(post: PostRow) {
-  form.title = post.title;
-  form.content = post.content || '';
-  form.cover = post.cover || '';
-  form.board_id = post.board?.id;
-}
-
-async function loadBoards() {
-  if (boards.value.length > 0) return;
-  boards.value = await paopaoApi.boards();
+function looksLikeHtml(value: string | undefined) {
+  return !!value && /<[a-z][\s\S]*>/i.test(value);
 }
 
 async function show(row: PostRow) {
-  editing.value = false;
   open.value = true;
   detail.value = await paopaoApi.post(row.id);
 }
 
-async function edit(row: PostRow) {
-  open.value = true;
-  editing.value = true;
-  const [post] = await Promise.all([paopaoApi.post(row.id), loadBoards()]);
-  detail.value = post;
-  fillForm(post);
-}
-
-async function save() {
-  if (!detail.value || !form.board_id) {
-    message.warning('请选择版块');
-    return;
-  }
-  if (!form.title.trim() || !form.content.trim()) {
-    message.warning('标题和正文都要填');
-    return;
-  }
-  saving.value = true;
-  try {
-    detail.value = await paopaoApi.updatePost(detail.value.id, {
-      board_id: form.board_id,
-      content: form.content.trim(),
-      cover: form.cover.trim() || null,
-      title: form.title.trim(),
-    });
-    editing.value = false;
-    message.success('已保存，可以继续审核');
-    gridApi.query();
-  } finally {
-    saving.value = false;
-  }
-}
-
-function cancelEdit() {
-  editing.value = false;
+function edit(row: PostRow) {
+  router.push(`/posts/${row.id}/edit`);
 }
 
 async function approve(row: PostRow) {
@@ -174,7 +123,7 @@ function statusColor(status: string) {
 </script>
 
 <template>
-  <Page auto-content-height description="成员发帖后先停在待审。可以先改标题、正文、版块和封面，再通过或拒绝。状态不会在编辑里改掉。" title="帖子审核">
+  <Page auto-content-height description="成员发帖后先停在待审。编辑会打开整页表单；通过和拒绝留在这里。" title="帖子审核">
     <Grid>
       <template #board="{ row }">{{ row.board?.name || '—' }}</template>
       <template #author="{ row }">{{ row.author?.nickname || '—' }}</template>
@@ -189,7 +138,7 @@ function statusColor(status: string) {
         <Button v-if="row.status !== 'rejected'" danger size="small" type="link" @click="askReject(row)">拒绝</Button>
       </template>
     </Grid>
-    <Drawer v-model:open="open" :width="560" :title="editing ? '编辑帖子' : '帖子正文'">
+    <Drawer v-model:open="open" :width="560" title="帖子正文">
       <template v-if="detail">
         <div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-black/45">
           <Tag :color="statusColor(detail.status)">{{ postStatusText[detail.status] || detail.status }}</Tag>
@@ -197,40 +146,16 @@ function statusColor(status: string) {
           <span>·</span>
           <span>{{ formatTime(detail.created_at) }}</span>
         </div>
-        <Form v-if="editing" layout="vertical">
-          <Form.Item label="标题" required>
-            <Input v-model:value="form.title" :maxlength="80" placeholder="标题" />
-          </Form.Item>
-          <Form.Item label="版块" required>
-            <Select
-              v-model:value="form.board_id"
-              :options="boards.map((board) => ({ label: board.name, value: board.id }))"
-              placeholder="选择版块"
-            />
-          </Form.Item>
-          <Form.Item label="封面地址">
-            <Input v-model:value="form.cover" :maxlength="255" placeholder="图片 URL，可留空" />
-          </Form.Item>
-          <Form.Item label="正文" required>
-            <Input.TextArea v-model:value="form.content" :maxlength="20000" :rows="10" placeholder="正文" />
-          </Form.Item>
-          <p class="mb-4 text-xs text-black/45">状态、作者和提交时间只读。保存后仍可在这篇上通过或拒绝。</p>
-          <div class="flex gap-2">
-            <Button :loading="saving" type="primary" @click="save">保存</Button>
-            <Button @click="cancelEdit">取消</Button>
-          </div>
-        </Form>
-        <template v-else>
-          <h2 class="text-lg font-semibold">{{ detail.title }}</h2>
-          <p class="mt-1 text-sm text-black/45">{{ detail.board?.name || '未分区' }}</p>
-          <p v-if="detail.cover" class="mt-2 break-all text-sm text-black/45">封面 {{ detail.cover }}</p>
-          <p class="mt-4 whitespace-pre-wrap leading-7">{{ detail.content }}</p>
-          <div class="mt-6 flex gap-2">
-            <Button @click="edit(detail)">编辑</Button>
-            <Button v-if="detail.status === 'pending'" type="primary" @click="approve(detail)">通过</Button>
-            <Button v-if="detail.status !== 'rejected'" danger @click="askReject(detail)">拒绝</Button>
-          </div>
-        </template>
+        <h2 class="text-lg font-semibold">{{ detail.title }}</h2>
+        <p class="mt-1 text-sm text-black/45">{{ detail.board?.name || '未分区' }}</p>
+        <p v-if="detail.cover" class="mt-2 break-all text-sm text-black/45">封面 {{ detail.cover }}</p>
+        <div v-if="looksLikeHtml(detail.content)" class="post-body mt-4" v-html="detail.content" />
+        <p v-else class="mt-4 whitespace-pre-wrap leading-7">{{ detail.content }}</p>
+        <div class="mt-6 flex gap-2">
+          <Button type="primary" @click="edit(detail)">编辑</Button>
+          <Button v-if="detail.status === 'pending'" @click="approve(detail)">通过</Button>
+          <Button v-if="detail.status !== 'rejected'" danger @click="askReject(detail)">拒绝</Button>
+        </div>
       </template>
     </Drawer>
     <Modal v-model:open="rejectOpen" title="拒绝这篇帖子" @ok="submitReject">
@@ -238,3 +163,14 @@ function statusColor(status: string) {
     </Modal>
   </Page>
 </template>
+
+<style scoped>
+.post-body :deep(p) {
+  margin: 0.6em 0;
+  line-height: 1.75;
+}
+
+.post-body :deep(img) {
+  max-width: 100%;
+}
+</style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { ApiError, request, token } from '../../utils/api'
 import { formatTime, postStatusText } from '../../utils/format'
@@ -8,6 +8,7 @@ import type { PostItem } from '../../utils/types'
 const loading = ref(true)
 const error = ref('')
 const post = ref<PostItem | null>(null)
+const html = computed(() => /<[a-z][\s\S]*>/i.test(post.value?.content || ''))
 
 async function load(id: number): Promise<void> {
   loading.value = true
@@ -48,7 +49,8 @@ onLoad((query) => {
       <text class="meta">
         {{ post.author?.nickname || '匿名' }} · {{ post.board?.name || '未分区' }} · {{ formatTime(post.created_at) }}
       </text>
-      <text class="content">{{ post.content }}</text>
+      <rich-text v-if="html" class="content" :nodes="post.content" />
+      <text v-else class="content">{{ post.content }}</text>
     </view>
   </view>
 </template>
