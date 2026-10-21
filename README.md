@@ -10,7 +10,7 @@ SaaS 多租户「论坛 + 软件商店」。一个租户一套圈子和软件目
 |---|---|
 | `backend/` | Laravel API，`/api/v1` |
 | `apps/uni/` | uni-app + uni-ui 用户端（H5，可再编 App / 小程序） |
-| `apps/admin/` | Ant Design Vue 运营后台 |
+| `apps/admin/` | Vue Vben Admin 5.7.0（`@vben/web-antd`）运营后台 |
 | `docs/` | [开发文档](docs/development.md)、[API 规划](docs/api-planning.md)、[SaaS 约定](docs/saas-conventions.md) |
 
 模块边界、错误码和二期清单以 `docs/` 为准。
@@ -35,8 +35,9 @@ npm install
 npm run dev:h5
 
 cd ../admin
-npm install
-npm run dev
+corepack enable
+pnpm install
+pnpm dev:antd
 ```
 
 | 服务 | 地址 |
@@ -48,7 +49,7 @@ npm run dev
 
 用户端是 DCloud 官方 `uni-preset-vue`（Vite + Vue 3 + TypeScript）加上 `uni-ui`，底部 Tab 为首页、社区、发现、消息、我的。H5 使用 hash 路由，`/api` 代理到 `43125`。要预览微信小程序，在 `apps/uni` 执行 `npm run dev:mp-weixin`，再用开发者工具打开 `dist/dev/mp-weixin`。本仓库这一轮只保证 H5 能跑。
 
-管理后台用 Ant Design Vue 4，布局按开源 Ant Design Pro：深色侧栏、顶栏、工作台。没有引入已停更的 Vue CLI 版 Pro 模板。菜单是运营菜单（概览、租户、用户、版块、帖子审核、软件审核、运营位、系统），不展示社区内容流。帖子正文只在审核抽屉里打开。
+管理后台是 [Vue Vben Admin](https://github.com/vbenjs/vue-vben-admin) **v5.7.0** 整仓，跑的是 Ant Design Vue 应用 `@vben/web-antd`（`pnpm dev:antd`，端口 43124）。登录页、侧栏、顶栏、多页签、主题和列表用的是 Vben 自带的 `BasicLayout`、`AuthenticationLogin`、`Page` 和 vxe-table，不是手写的仿 Pro 壳。菜单只保留运营：概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。社区信息流不在后台。
 
 原先的 `apps/web` Vue H5 已移除，用户端只保留 `apps/uni`。
 

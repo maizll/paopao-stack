@@ -101,7 +101,7 @@ function open(id: number): void {
 
 .cols {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-start;
 }
 
@@ -110,6 +110,6 @@ function open(id: number): void {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 </style>

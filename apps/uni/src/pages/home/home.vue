@@ -97,6 +97,7 @@ onPullDownRefresh(async () => {
       placeholder="搜笔记"
       cancel-button="none"
       bg-color="#ffffff"
+      radius="18"
       @confirm="onSearch"
       @clear="onClear"
     />
@@ -134,7 +135,7 @@ onPullDownRefresh(async () => {
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 12px 12px 24px;
+  padding: 8px 8px 16px;
   box-sizing: border-box;
 }
 

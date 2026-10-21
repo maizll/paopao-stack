@@ -16,7 +16,7 @@
 | API | Laravel 13，PHP 8.3，路由前缀 `/api/v1` |
 | 鉴权 | Laravel Sanctum personal access token，请求头 `Authorization: Bearer <token>` |
 | 用户端 | uni-app（Vue 3 + Vite + TypeScript）+ uni-ui，`apps/uni`。H5 预览，同一套页面可再编到 App / 小程序 |
-| 管理后台 | Ant Design Vue 4，Pro 式侧栏 + 顶栏 + 工作台，`apps/admin` |
+| 管理后台 | Vue Vben Admin 5.7.0，`apps/admin` 大仓里的 `@vben/web-antd`（Ant Design Vue） |
 | 数据库 | MySQL 8 / MariaDB 10.11，字符集 `utf8mb4` |
 
 客户端看到的登录响应是 `access_token`、`token_type`、`expires_in`、`user`。这是冻结的凭证契约。当前签发的是 Sanctum 不透明令牌，不是签名 JWT。以后若换成签名 JWT，只替换 `AuthService::issue()`，不改响应壳，也不改 `Authorization` 头。
@@ -32,17 +32,17 @@ backend/                 Laravel API
   app/Http/Controllers/Api/V1/{Module}/
   app/Policies/          按模型发现，例如 PostPolicy、TenantPolicy
 apps/uni/                用户端（uni-app + uni-ui，H5 / App / 小程序）
-apps/admin/              运营后台（Ant Design Vue）
+apps/admin/              Vue Vben Admin 5.7.0 大仓，运营后台在 apps/web-antd
 docs/                    开发文档、API 规划、SaaS 约定
 ```
 
 ## 前端模板
 
-管理后台使用 Ant Design Vue 4。布局参照开源 Ant Design Pro：深色侧栏、白色顶栏、浅灰内容区和一块工作台。不引入已停更的 Vue CLI 工程 `ant-design-vue-pro`。菜单是概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。这里不渲染社区信息流；帖子正文只在审核抽屉里打开，数据来自 `GET /api/v1/admin/posts/{id}`。
+管理后台直接使用 Vue Vben Admin 5.7.0（仓库 [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin)，在线文档 [vben.pro](https://www.vben.pro)）。`apps/admin` 是这份大仓，保留 `packages/` 与 `apps/web-antd`。官方说明 `web-antd` 不能拆出去单独跑，所以没有再手写一套 Pro 布局。启动命令是 `pnpm dev:antd`。登录页是 `AuthenticationLogin`，框架是 `BasicLayout`，列表页是 `Page` + vxe-table。菜单是概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。这里不渲染社区信息流；帖子正文只在审核抽屉里打开，数据来自 `GET /api/v1/admin/posts/{id}`。
 
 用户端使用 DCloud 官方预设 `uni-preset-vue`（Vite + Vue 3 + TypeScript）和 `@dcloudio/uni-ui`。底部 Tab 是首页、社区、发现、消息、我的。H5 开发端口是 `43126`，`/api` 代理到 Laravel。同一套页面可以再编到 App 和小程序，本轮只跑通 H5。原先的 `apps/web` 已删除。
 
-视觉是白底和珊瑚强调色 `#ff5c39`，首页与社区用双列笔记卡片。不使用葫芦侠的绿色顶栏，也不复用小红书的标识。消息页会请求通知接口；当前返回骨架占位，页面直接说明审核结果不会推送。
+视觉是白底和珊瑚强调色 `#ff5c39`，首页与社区用双列笔记卡片：实拍封面、版块角标、标题、头像昵称和点赞。不使用葫芦侠的绿色顶栏，也不复用小红书的标识。消息页会请求通知接口；当前返回骨架占位，页面直接说明审核结果不会推送。
 
 ## 模块边界
 

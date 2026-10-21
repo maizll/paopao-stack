@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import PostFeed from '../../components/post-feed/post-feed.vue'
 import { ApiError, request, setTenantSlug, setToken, tenantSlug, token } from '../../utils/api'
-import { postStatusText } from '../../utils/format'
 import type { AuthResult, AuthUser, Page, PostItem } from '../../utils/types'
 
 const loading = ref(false)
@@ -84,11 +84,15 @@ onPullDownRefresh(async () => {
 
 <template>
   <view class="page">
-    <view v-if="me" class="profile">
-      <view class="avatar">{{ me.nickname.slice(0, 1) }}</view>
-      <view>
-        <text class="name">{{ me.nickname }}</text>
-        <text class="sub">租户 {{ tenantSlug() }}</text>
+    <view v-if="me" class="hero">
+      <image class="hero-photo" src="/static/covers/cover-city.jpg" mode="aspectFill" />
+      <view class="hero-shade" />
+      <view class="hero-body">
+        <view class="avatar">{{ me.nickname.slice(0, 1) }}</view>
+        <view>
+          <text class="name">{{ me.nickname }}</text>
+          <text class="sub">{{ tenantSlug() }} · {{ posts.length }} 篇笔记</text>
+        </view>
       </view>
     </view>
 
@@ -110,21 +114,17 @@ onPullDownRefresh(async () => {
     </view>
     <text v-if="me && error" class="error">{{ error }}</text>
 
-    <view v-if="me" class="card">
-      <text class="card-title">我的帖子</text>
-      <view v-if="loading" class="muted">正在读取…</view>
-      <view v-else-if="posts.length === 0" class="muted">你还没有发过帖子。写一篇之后会停在待审。</view>
-      <view v-else>
-        <view v-for="item in posts" :key="item.id" class="row" @click="openPost(item.id)">
-          <view class="row-main">
-            <text class="row-title">{{ item.title }}</text>
-            <text class="muted">{{ item.board?.name || '未分区' }}</text>
-          </view>
-          <text class="flag" :class="{ pending: item.status === 'pending' }">
-            {{ postStatusText[item.status || ''] || item.status }}
-          </text>
-        </view>
-      </view>
+    <view v-if="me" class="feed">
+      <post-feed
+        :items="posts"
+        :loading="loading"
+        :error="error"
+        empty-title="你还没有发过笔记"
+        empty-text="写一篇之后会停在待审，通过后才会出现在首页。"
+        show-status
+        @retry="loadProfile"
+        @open="openPost"
+      />
     </view>
   </view>
 </template>
@@ -132,23 +132,47 @@ onPullDownRefresh(async () => {
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 12px 12px 28px;
+  padding: 0 0 24px;
   box-sizing: border-box;
 }
 
-.profile,
+.hero {
+  position: relative;
+  height: 168px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.hero-photo {
+  width: 100%;
+  height: 168px;
+}
+
+.hero-shade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 96px;
+  background: linear-gradient(180deg, transparent, rgba(20, 12, 8, 0.72));
+}
+
+.hero-body {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .card,
 .actions {
   background: #fff;
   border-radius: 18px;
   padding: 16px;
-  margin-bottom: 12px;
-}
-
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  margin: 0 12px 12px;
 }
 
 .avatar {
@@ -167,16 +191,26 @@ onPullDownRefresh(async () => {
 .name,
 .card-title {
   display: block;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
+  color: #fff;
+}
+
+.card-title {
+  color: #1f1a17;
 }
 
 .sub,
 .muted,
 .label {
   display: block;
-  color: #6f675f;
+  color: rgba(255, 255, 255, 0.86);
   font-size: 13px;
+}
+
+.label,
+.muted {
+  color: #6f675f;
 }
 
 .label {
@@ -218,32 +252,7 @@ onPullDownRefresh(async () => {
   font-size: 13px;
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 0;
-  border-top: 1px solid #f0e8e3;
-}
-
-.row-main {
-  min-width: 0;
-}
-
-.row-title {
-  display: block;
-  font-size: 15px;
-  font-weight: 650;
-}
-
-.flag {
-  flex: none;
-  font-size: 12px;
-  color: #6f675f;
-}
-
-.flag.pending {
-  color: #c2410c;
+.feed {
+  padding: 0 8px 12px;
 }
 </style>
