@@ -1,36 +1,39 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, ApiError, setTenantSlug, setToken } from '../api'
 import type { Me } from '../types'
 
 const router = useRouter()
-const account = ref('admin@demo.paopao.local')
-const password = ref('password')
-const slug = ref('demo')
-const error = ref('')
 const submitting = ref(false)
+const error = ref('')
+const form = reactive({
+  slug: 'demo',
+  account: 'admin@demo.paopao.local',
+  password: 'password',
+})
 
 function useDemo(kind: 'tenant' | 'platform'): void {
   if (kind === 'platform') {
-    account.value = 'super@paopao.local'
-    slug.value = ''
+    form.account = 'super@paopao.local'
+    form.slug = ''
   } else {
-    account.value = 'admin@demo.paopao.local'
-    slug.value = 'demo'
+    form.account = 'admin@demo.paopao.local'
+    form.slug = 'demo'
   }
-  password.value = 'password'
+  form.password = 'password'
+  error.value = ''
 }
 
 async function submit(): Promise<void> {
   submitting.value = true
   error.value = ''
-  setTenantSlug(slug.value)
+  setTenantSlug(form.slug)
   setToken(null)
   try {
     const result = await api<{ access_token: string }>('/api/v1/admin/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ account: account.value, password: password.value }),
+      body: JSON.stringify({ account: form.account, password: form.password }),
     })
     setToken(result.data.access_token)
     await api<Me>('/api/v1/auth/me')
@@ -46,29 +49,27 @@ async function submit(): Promise<void> {
 
 <template>
   <main class="login-page">
-    <section class="login-card">
-      <h1>泡泡栈后台</h1>
-      <p>平台超管开通租户，租户管理员审核圈子和商店。这是骨架，不是完整运营台。</p>
-      <form @submit.prevent="submit">
-        <label>
-          租户标识
-          <input v-model="slug" placeholder="平台超管可留空" autocomplete="off" />
-        </label>
-        <label>
-          账号
-          <input v-model="account" autocomplete="username" />
-        </label>
-        <label>
-          密码
-          <input v-model="password" type="password" autocomplete="current-password" />
-        </label>
-        <button class="primary" type="submit" :disabled="submitting">进入后台</button>
-        <p v-if="error" class="state error">{{ error }}</p>
-      </form>
-      <div class="row">
-        <button class="ghost" type="button" @click="useDemo('tenant')">填入租户管理员</button>
-        <button class="ghost" type="button" @click="useDemo('platform')">填入平台超管</button>
-      </div>
-    </section>
+    <a-card class="login-card" :bordered="false">
+      <div class="login-mark">泡</div>
+      <h1>泡泡栈运营后台</h1>
+      <p class="lead">开通租户，审核帖子和软件，查看运营位。社区内容在 App 里看，不在这里浏览。</p>
+      <a-form layout="vertical" :model="form" @finish="submit">
+        <a-form-item label="租户标识" name="slug">
+          <a-input v-model:value="form.slug" placeholder="平台超管可留空，审核演示内容时填 demo" autocomplete="off" />
+        </a-form-item>
+        <a-form-item label="账号" name="account" :rules="[{ required: true, message: '请填写账号' }]">
+          <a-input v-model:value="form.account" autocomplete="username" />
+        </a-form-item>
+        <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请填写密码' }]">
+          <a-input-password v-model:value="form.password" autocomplete="current-password" />
+        </a-form-item>
+        <a-alert v-if="error" type="error" :message="error" show-icon style="margin-bottom: 16px" />
+        <a-button type="primary" html-type="submit" block :loading="submitting">进入后台</a-button>
+      </a-form>
+      <a-space style="margin-top: 16px" wrap>
+        <a-button @click="useDemo('tenant')">填入租户管理员</a-button>
+        <a-button @click="useDemo('platform')">填入平台超管</a-button>
+      </a-space>
+    </a-card>
   </main>
 </template>

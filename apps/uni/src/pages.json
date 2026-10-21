@@ -1,0 +1,108 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/home/home",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "首页",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#f6f3f0"
+      }
+    },
+    {
+      "path": "pages/community/community",
+      "style": {
+        "navigationBarTitleText": "社区",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#f6f3f0"
+      }
+    },
+    {
+      "path": "pages/discover/discover",
+      "style": {
+        "navigationBarTitleText": "发现",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#f6f3f0"
+      }
+    },
+    {
+      "path": "pages/messages/messages",
+      "style": {
+        "navigationBarTitleText": "消息",
+        "backgroundColor": "#f6f3f0"
+      }
+    },
+    {
+      "path": "pages/mine/mine",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#f6f3f0"
+      }
+    },
+    {
+      "path": "pages/post/detail",
+      "style": {
+        "navigationBarTitleText": "笔记",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    {
+      "path": "pages/post/compose",
+      "style": {
+        "navigationBarTitleText": "写一篇",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "泡泡栈",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f6f3f0"
+  },
+  "tabBar": {
+    "color": "#8a817c",
+    "selectedColor": "#ff5c39",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "static/tab/home.png",
+        "selectedIconPath": "static/tab/home-active.png"
+      },
+      {
+        "pagePath": "pages/community/community",
+        "text": "社区",
+        "iconPath": "static/tab/community.png",
+        "selectedIconPath": "static/tab/community-active.png"
+      },
+      {
+        "pagePath": "pages/discover/discover",
+        "text": "发现",
+        "iconPath": "static/tab/discover.png",
+        "selectedIconPath": "static/tab/discover-active.png"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "消息",
+        "iconPath": "static/tab/messages.png",
+        "selectedIconPath": "static/tab/messages-active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "static/tab/mine.png",
+        "selectedIconPath": "static/tab/mine-active.png"
+      }
+    ]
+  }
+}

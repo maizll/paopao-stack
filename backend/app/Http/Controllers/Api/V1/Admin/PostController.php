@@ -25,6 +25,13 @@ class PostController extends ApiController
         return $this->paginated($page);
     }
 
+    public function show(Post $post): JsonResponse
+    {
+        $post->load(['author', 'board']);
+
+        return $this->ok($post->toDetailArray());
+    }
+
     public function approve(Post $post): JsonResponse
     {
         if ($post->status === 'published') {

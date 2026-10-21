@@ -8,6 +8,18 @@ const error = ref('')
 const banners = ref<BannerItem[]>([])
 const grid = ref<GridItem[]>([])
 
+const bannerColumns = [
+  { title: '标题', key: 'title' },
+  { title: '链接类型', dataIndex: 'link_type', key: 'link_type', width: 160 },
+  { title: '排序', dataIndex: 'sort', key: 'sort', width: 100 },
+]
+
+const gridColumns = [
+  { title: '标题', dataIndex: 'title', key: 'title' },
+  { title: '角标', key: 'badge', width: 140 },
+  { title: '排序', dataIndex: 'sort', key: 'sort', width: 100 },
+]
+
 onMounted(async () => {
   try {
     const [bannerRes, gridRes] = await Promise.all([
@@ -25,39 +37,46 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="panel">
-    <h2>Banner</h2>
-    <p v-if="loading" class="state">正在读取…</p>
-    <p v-else-if="error" class="state error">{{ error }}</p>
-    <p v-else-if="!banners.length" class="state">还没有 Banner。</p>
-    <table v-else>
-      <thead>
-        <tr><th>标题</th><th>链接类型</th><th>排序</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in banners" :key="item.id">
-          <td>{{ item.title || '未命名' }}</td>
-          <td>{{ item.link_type }}</td>
-          <td>{{ item.sort }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-  <section class="panel">
-    <h2>九宫格</h2>
-    <p v-if="!loading && !error && !grid.length" class="state">还没有九宫格入口。</p>
-    <table v-else-if="grid.length">
-      <thead>
-        <tr><th>标题</th><th>角标</th><th>排序</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in grid" :key="item.id">
-          <td>{{ item.title }}</td>
-          <td>{{ item.badge || '—' }}</td>
-          <td>{{ item.sort }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="state">写入接口返回骨架占位，本页只读。</p>
-  </section>
+  <div class="page-head">
+    <div>
+      <h1>运营位</h1>
+      <p>Banner 和九宫格会出现在用户端首页。写入接口仍是骨架占位，这里只核对现有配置。</p>
+    </div>
+  </div>
+  <a-alert
+    v-if="error"
+    type="error"
+    :message="error"
+    show-icon
+  />
+  <div v-else class="stack">
+    <a-card title="Banner">
+      <a-table
+        :columns="bannerColumns"
+        :data-source="banners"
+        :loading="loading"
+        row-key="id"
+        :pagination="false"
+        :locale="{ emptyText: '还没有 Banner' }"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'title'">{{ record.title || '未命名' }}</template>
+        </template>
+      </a-table>
+    </a-card>
+    <a-card title="九宫格">
+      <a-table
+        :columns="gridColumns"
+        :data-source="grid"
+        :loading="loading"
+        row-key="id"
+        :pagination="false"
+        :locale="{ emptyText: '还没有九宫格入口' }"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'badge'">{{ record.badge || '—' }}</template>
+        </template>
+      </a-table>
+    </a-card>
+  </div>
 </template>
