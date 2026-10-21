@@ -9,10 +9,15 @@ const error = ref('')
 const apps = ref<SoftwareItem[]>([])
 const categories = ref<Category[]>([])
 const categoryId = ref(0)
+const keyword = ref('')
 
 const visible = computed(() => {
-  if (!categoryId.value) return apps.value
-  return apps.value.filter((item) => item.category?.id === categoryId.value)
+  const word = keyword.value.trim()
+  return apps.value.filter((item) => {
+    if (categoryId.value && item.category?.id !== categoryId.value) return false
+    if (!word) return true
+    return `${item.name} ${item.summary || ''}`.includes(word)
+  })
 })
 
 async function load(): Promise<void> {
@@ -32,6 +37,10 @@ async function load(): Promise<void> {
   }
 }
 
+function obtain(item: SoftwareItem): void {
+  uni.showToast({ title: `${item.name} 的下载还没开放`, icon: 'none' })
+}
+
 onShow(() => {
   void load()
 })
@@ -44,20 +53,27 @@ onPullDownRefresh(async () => {
 
 <template>
   <view class="page">
-    <text class="lead">租户软件架。下载和支付还没接上，这里只看目录。</text>
-    <scroll-view v-if="categories.length" scroll-x class="chips" :show-scrollbar="false">
-      <view class="chip" :class="{ on: categoryId === 0 }" @click="categoryId = 0">全部</view>
-      <view
-        v-for="item in categories"
-        :key="item.id"
-        class="chip"
-        :class="{ on: categoryId === item.id }"
-        @click="categoryId = item.id"
-      >
-        {{ item.name }}
+    <app-nav title="发现" />
+    <view class="search">
+      <uni-icons type="search" size="16" color="#9ca3af" />
+      <input v-model="keyword" class="search-input" placeholder="搜索软件" placeholder-class="ph" />
+    </view>
+    <scroll-view v-if="categories.length" scroll-x class="cat-scroll" :show-scrollbar="false">
+      <view class="cat-row">
+        <view class="cat" :class="{ on: categoryId === 0 }" @click="categoryId = 0">全部</view>
+        <view
+          v-for="item in categories"
+          :key="item.id"
+          class="cat"
+          :class="{ on: categoryId === item.id }"
+          @click="categoryId = item.id"
+        >
+          {{ item.name }}
+        </view>
       </view>
     </scroll-view>
-    <view v-if="loading" class="state">正在读取软件目录…</view>
+
+    <view v-if="loading" class="state">正在读取软件架…</view>
     <view v-else-if="error" class="state">
       <text class="state-title">没读出来</text>
       <text class="state-text">{{ error }}</text>
@@ -65,7 +81,7 @@ onPullDownRefresh(async () => {
     </view>
     <view v-else-if="visible.length === 0" class="state">
       <text class="state-title">架上还没有软件</text>
-      <text class="state-text">管理员登记并发布之后，会出现在这里。</text>
+      <text class="state-text">管理员发布之后，会出现在这里。</text>
     </view>
     <view v-else class="list">
       <view v-for="item in visible" :key="item.id" class="soft">
@@ -73,10 +89,9 @@ onPullDownRefresh(async () => {
         <view class="body">
           <text class="name">{{ item.name }}</text>
           <text class="summary">{{ item.summary || '暂无简介' }}</text>
-          <text class="meta">
-            {{ item.latest_version?.version_name || '未标版本' }} · {{ item.download_count }} 次下载
-          </text>
+          <text class="meta">{{ item.latest_version?.version_name || '未标版本' }} · {{ item.download_count }} 次获取</text>
         </view>
+        <view class="get" @click="obtain(item)">获取</view>
       </view>
     </view>
   </view>
@@ -85,36 +100,57 @@ onPullDownRefresh(async () => {
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 12px 12px 28px;
-  box-sizing: border-box;
+  background: #f8fafc;
 }
 
-.lead {
-  display: block;
-  color: #6f675f;
-  font-size: 13px;
-  margin: 4px 4px 12px;
+.search {
+  margin: 8px 12px;
+  height: 36px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.chips {
-  white-space: nowrap;
+.search-input {
+  flex: 1;
+  height: 36px;
+  font-size: 14px;
+}
+
+.ph {
+  color: #9ca3af;
+}
+
+.cat-scroll {
   height: 40px;
-  margin-bottom: 12px;
+  white-space: nowrap;
 }
 
-.chip {
+.cat-row {
   display: inline-flex;
   align-items: center;
-  height: 32px;
+  height: 40px;
   padding: 0 12px;
+}
+
+.cat {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
   margin-right: 8px;
-  border-radius: 999px;
+  padding: 0 12px;
+  border-radius: 14px;
   background: #fff;
+  color: #606266;
   font-size: 13px;
 }
 
-.chip.on {
-  background: #1f1a17;
+.cat.on {
+  background: #16160e;
   color: #fff;
 }
 
@@ -122,58 +158,85 @@ onPullDownRefresh(async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 4px 12px 24px;
 }
 
 .soft {
   display: flex;
+  align-items: center;
   gap: 12px;
   padding: 14px;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .mark {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 14px;
-  background: #ff5c39;
+  background: #16160e;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   flex: none;
 }
 
 .body {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .name {
   font-size: 16px;
   font-weight: 650;
+  color: #16160e;
 }
 
 .summary,
 .meta {
-  color: #6f675f;
-  font-size: 13px;
+  color: #909399;
+  font-size: 12px;
   line-height: 1.4;
 }
 
-.state {
-  padding: 48px 8px;
+.summary {
+  color: #606266;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.get {
+  flex: none;
+  min-width: 52px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  background: #f3f4f6;
+  color: #ff2442;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 28px;
   text-align: center;
-  color: #6f675f;
+}
+
+.state {
+  padding: 64px 20px;
+  text-align: center;
+  color: #909399;
 }
 
 .state-title {
   display: block;
-  color: #1f1a17;
+  color: #16160e;
   font-size: 16px;
   font-weight: 650;
   margin-bottom: 6px;
@@ -185,13 +248,8 @@ onPullDownRefresh(async () => {
 
 .btn {
   margin-top: 16px;
-  background: #ff5c39;
+  width: 120px;
+  background: #ff2442;
   color: #fff;
-  border: none;
-  border-radius: 999px;
-}
-
-.btn::after {
-  border: none;
 }
 </style>

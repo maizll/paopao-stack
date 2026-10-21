@@ -9,13 +9,14 @@ onLaunch(() => {
 
 <style>
 page {
-  background: #f6f3f0;
-  color: #1f1a17;
+  background: #f8fafc;
+  color: #16160e;
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
 }
 
-button.btn {
-  background: #ff5c39;
+button.btn,
+button.publish {
+  background: #ff2442;
   color: #ffffff;
   border-radius: 999px;
   border: none;
@@ -24,12 +25,12 @@ button.btn {
   height: 44px;
 }
 
-button.btn::after {
+button.btn::after,
+button.publish::after {
   border: none;
 }
 
-button.btn.ghost {
-  background: #ffffff;
-  color: #1f1a17;
+.ph {
+  color: #c0c4cc;
 }
 </style>

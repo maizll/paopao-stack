@@ -3,30 +3,30 @@ import { computed, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import PostFeed from '../../components/post-feed/post-feed.vue'
 import { ApiError, request } from '../../utils/api'
-import type { Banner, Board, GridItem, Page, PostItem, SiteConfig } from '../../utils/types'
+import type { Board, Page, PostItem } from '../../utils/types'
 
 const loading = ref(true)
 const error = ref('')
 const posts = ref<PostItem[]>([])
 const boards = ref<Board[]>([])
-const grid = ref<GridItem[]>([])
-const banner = ref('')
-const tenantName = ref('泡泡栈')
 const keyword = ref('')
 const boardId = ref(0)
-const statusBar = ref(0)
+const tab = ref(0)
+const catOpen = ref(false)
 
-const info = uni.getSystemInfoSync()
-statusBar.value = info.statusBarHeight || 0
-
-const visibleBoards = computed(() => boards.value.slice(0, 8))
+const visible = computed(() => {
+  const list = posts.value.slice()
+  if (tab.value === 1) {
+    list.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+  }
+  return list
+})
 
 async function load(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    const [config, postPage, boardList, banners, shortcuts] = await Promise.all([
-      request<SiteConfig>('/system/config'),
+    const [postPage, boardList] = await Promise.all([
       request<Page<PostItem>>('/posts', {
         data: {
           per_page: 20,
@@ -35,14 +35,9 @@ async function load(): Promise<void> {
         },
       }),
       request<Board[]>('/boards'),
-      request<Banner[]>('/ops/banners'),
-      request<GridItem[]>('/ops/grid'),
     ])
-    tenantName.value = config.tenant?.name || '泡泡栈'
     posts.value = postPage.items
     boards.value = boardList
-    banner.value = banners[0]?.title || ''
-    grid.value = shortcuts.slice(0, 4)
   } catch (cause) {
     error.value = cause instanceof ApiError ? cause.message : '读取失败'
   } finally {
@@ -52,25 +47,20 @@ async function load(): Promise<void> {
 
 function pickBoard(id: number): void {
   boardId.value = id
+  catOpen.value = false
   void load()
 }
 
-function onSearch(event: { value?: string }): void {
-  keyword.value = event.value || ''
-  void load()
+function pickTab(index: number): void {
+  tab.value = index
 }
 
-function onClear(): void {
-  keyword.value = ''
+function onSearch(): void {
   void load()
 }
 
 function openPost(id: number): void {
   uni.navigateTo({ url: `/pages/post/detail?id=${id}` })
-}
-
-function goCommunity(): void {
-  uni.switchTab({ url: '/pages/community/community' })
 }
 
 onShow(() => {
@@ -84,120 +74,237 @@ onPullDownRefresh(async () => {
 </script>
 
 <template>
-  <view class="page" :style="{ paddingTop: statusBar + 12 + 'px' }">
-    <view class="brand-row">
-      <view class="logo-wrap">
-        <view class="dot" />
-        <text class="logo">泡泡栈</text>
+  <view class="page">
+    <app-nav>
+      <view class="tabs">
+        <view class="tab" :class="{ on: tab === 0 }" @click="pickTab(0)">
+          <text class="tab-text">推荐</text>
+          <view class="line" />
+        </view>
+        <view class="tab" :class="{ on: tab === 1 }" @click="pickTab(1)">
+          <text class="tab-text">最新</text>
+          <view class="line" />
+        </view>
       </view>
-      <text class="tenant">{{ tenantName }}</text>
+      <template #right>
+        <view class="icon-btn" @click="onSearch">
+          <uni-icons type="search" size="22" color="#16160e" />
+        </view>
+      </template>
+    </app-nav>
+
+    <view class="search">
+      <uni-icons type="search" size="16" color="#9ca3af" />
+      <input
+        v-model="keyword"
+        class="search-input"
+        confirm-type="search"
+        placeholder="搜索笔记"
+        placeholder-class="ph"
+        @confirm="onSearch"
+      />
+      <text v-if="keyword" class="clear" @click="keyword = ''; onSearch()">清除</text>
     </view>
-    <uni-search-bar
-      v-model="keyword"
-      placeholder="搜笔记"
-      cancel-button="none"
-      bg-color="#ffffff"
-      radius="18"
-      @confirm="onSearch"
-      @clear="onClear"
-    />
-    <uni-notice-bar v-if="banner" single :text="banner" background-color="#fff1ec" color="#c2410c" />
-    <scroll-view v-if="visibleBoards.length" scroll-x class="chips" :show-scrollbar="false">
-      <view class="chip" :class="{ on: boardId === 0 }" @click="pickBoard(0)">全部</view>
-      <view
-        v-for="board in visibleBoards"
-        :key="board.id"
-        class="chip"
-        :class="{ on: boardId === board.id }"
-        @click="pickBoard(board.id)"
-      >
-        {{ board.name }}
+
+    <view class="cat-bar">
+      <scroll-view scroll-x class="cat-scroll" :show-scrollbar="false">
+        <view class="cat-row">
+          <view class="cat" :class="{ on: boardId === 0 }" @click="pickBoard(0)">全部</view>
+          <view
+            v-for="board in boards"
+            :key="board.id"
+            class="cat"
+            :class="{ on: boardId === board.id }"
+            @click="pickBoard(board.id)"
+          >
+            {{ board.name }}
+          </view>
+        </view>
+      </scroll-view>
+      <view v-if="boards.length > 3" class="cat-more" @click="catOpen = !catOpen">
+        <uni-icons :type="catOpen ? 'top' : 'bottom'" size="16" color="#666" />
       </view>
-    </scroll-view>
-    <scroll-view v-if="grid.length" scroll-x class="shortcuts" :show-scrollbar="false">
-      <view v-for="item in grid" :key="item.id" class="shortcut" @click="goCommunity">
-        <text class="shortcut-title">{{ item.title }}</text>
-        <text v-if="item.badge" class="shortcut-badge">{{ item.badge }}</text>
+    </view>
+    <view v-if="catOpen" class="cat-panel">
+      <view class="cat-grid">
+        <view class="cat-cell" :class="{ on: boardId === 0 }" @click="pickBoard(0)">全部</view>
+        <view
+          v-for="board in boards"
+          :key="board.id"
+          class="cat-cell"
+          :class="{ on: boardId === board.id }"
+          @click="pickBoard(board.id)"
+        >
+          {{ board.name }}
+        </view>
       </view>
-    </scroll-view>
-    <post-feed
-      :items="posts"
-      :loading="loading"
-      :error="error"
-      empty-title="这里还没有公开笔记"
-      empty-text="通过审核的帖子会排成两列出现在这里。"
-      @retry="load"
-      @open="openPost"
-    />
+    </view>
+
+    <view class="feed">
+      <post-feed
+        :items="visible"
+        :loading="loading"
+        :error="error"
+        empty-title="暂无笔记"
+        empty-text="换个分类看看，或去社区发布第一条。"
+        @retry="load"
+        @open="openPost"
+      />
+    </view>
   </view>
 </template>
 
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 8px 8px 16px;
-  box-sizing: border-box;
+  background: #f8fafc;
 }
 
-.brand-row {
+.tabs {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 4px 4px 0;
+  align-items: flex-end;
+  justify-content: center;
+  height: 42px;
 }
 
-.logo-wrap {
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 42px;
+  padding: 0 14px 4px;
+}
+
+.tab-text {
+  font-size: 16px;
+  color: #606266;
+  line-height: 1.2;
+}
+
+.tab.on .tab-text {
+  color: #16160e;
+  font-weight: 650;
+  font-size: 17px;
+}
+
+.line {
+  width: 20px;
+  height: 2px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: transparent;
+}
+
+.tab.on .line {
+  background: #ff2442;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search {
+  margin: 8px 12px 4px;
+  height: 36px;
+  border-radius: 18px;
+  background: #f3f4f6;
+  padding: 0 14px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ff5c39;
-}
-
-.logo {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-
-.tenant {
-  color: #6f675f;
-  font-size: 13px;
-}
-
-.chips,
-.shortcuts {
-  white-space: nowrap;
-  margin: 4px 0 12px;
+.search-input {
+  flex: 1;
   height: 36px;
+  font-size: 14px;
+  color: #16160e;
 }
 
-.chip,
-.shortcut {
+.ph {
+  color: #9ca3af;
+}
+
+.clear {
+  color: #909399;
+  font-size: 12px;
+}
+
+.cat-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  height: 40px;
+}
+
+.cat-scroll {
+  flex: 1;
+  width: 0;
+  height: 40px;
+  white-space: nowrap;
+}
+
+.cat-row {
   display: inline-flex;
   align-items: center;
-  height: 32px;
+  height: 40px;
+  padding: 0 4px 0 8px;
+}
+
+.cat,
+.cat-cell {
+  color: #606266;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cat {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
   padding: 0 12px;
-  margin-right: 8px;
-  border-radius: 999px;
+}
+
+.cat.on,
+.cat-cell.on {
+  color: #16160e;
+  font-weight: 650;
+}
+
+.cat-more {
+  width: 36px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #fff;
-  color: #3a332f;
+  box-shadow: -8px 0 8px #fff;
+}
+
+.cat-panel {
+  background: #fff;
+  padding: 4px 8px 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.cat-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cat-cell {
+  width: 25%;
+  text-align: center;
+  line-height: 36px;
   font-size: 13px;
 }
 
-.chip.on {
-  background: #1f1a17;
-  color: #fff;
-}
-
-.shortcut-badge {
-  margin-left: 6px;
-  color: #c2410c;
-  font-size: 12px;
+.feed {
+  padding: 8px 0 16px;
 }
 </style>

@@ -47,7 +47,7 @@ pnpm dev:antd
 | 用户端 H5 | http://127.0.0.1:43126 |
 | 管理后台 | http://127.0.0.1:43124 |
 
-用户端是 DCloud 官方 `uni-preset-vue`（Vite + Vue 3 + TypeScript）加上 `uni-ui`，底部 Tab 为首页、社区、发现、消息、我的。H5 使用 hash 路由，`/api` 代理到 `43125`。要预览微信小程序，在 `apps/uni` 执行 `npm run dev:mp-weixin`，再用开发者工具打开 `dist/dev/mp-weixin`。本仓库这一轮只保证 H5 能跑。
+用户端骨架是 DCloud 官方 `uni-preset-vue`（Vite + Vue 3 + TypeScript）加上免费的 `uni-ui`。笔记流的版式参考 MIT 协议的 [HongShu-Ui](https://github.com/Ma-YongJian/HongShu-Ui) `hongshu-app`（首页、详情、个人页、消息、发布和笔记卡片），用本仓库的 Vue 3 + TypeScript 页面重写，并继续请求 `/api/v1`。没有引入它的 Spring 后端、Pro 或 `thorui-uni`。底部 Tab 为首页、社区、发现、消息、我的。H5 使用 hash 路由，`/api` 代理到 `43125`。要预览微信小程序，在 `apps/uni` 执行 `npm run dev:mp-weixin`，再用开发者工具打开 `dist/dev/mp-weixin`。本仓库这一轮只保证 H5 能跑。
 
 管理后台是 [Vue Vben Admin](https://github.com/vbenjs/vue-vben-admin) **v5.7.0** 整仓，跑的是 Ant Design Vue 应用 `@vben/web-antd`（`pnpm dev:antd`，端口 43124）。登录页、侧栏、顶栏、多页签、主题和列表用的是 Vben 自带的 `BasicLayout`、`AuthenticationLogin`、`Page` 和 vxe-table，不是手写的仿 Pro 壳。菜单只保留运营：概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。社区信息流不在后台。
 

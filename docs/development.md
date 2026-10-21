@@ -40,9 +40,11 @@ docs/                    开发文档、API 规划、SaaS 约定
 
 管理后台直接使用 Vue Vben Admin 5.7.0（仓库 [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin)，在线文档 [vben.pro](https://www.vben.pro)）。`apps/admin` 是这份大仓，保留 `packages/` 与 `apps/web-antd`。官方说明 `web-antd` 不能拆出去单独跑，所以没有再手写一套 Pro 布局。启动命令是 `pnpm dev:antd`。登录页是 `AuthenticationLogin`，框架是 `BasicLayout`，列表页是 `Page` + vxe-table。菜单是概览、租户、用户、版块、帖子审核、软件审核、运营位、系统。这里不渲染社区信息流。帖子审核列表打开抽屉看正文。编辑是独立页 `/posts/:id/edit`，正文用 Vben 自带的 Tiptap（`VbenTiptap`，`@vben/plugins/tiptap`）写成 HTML，经 `PUT /api/v1/admin/posts/{id}` 保存。状态不在编辑页改。
 
-用户端使用 DCloud 官方预设 `uni-preset-vue`（Vite + Vue 3 + TypeScript）和 `@dcloudio/uni-ui`。底部 Tab 是首页、社区、发现、消息、我的。H5 开发端口是 `43126`，`/api` 代理到 Laravel。同一套页面可以再编到 App 和小程序，本轮只跑通 H5。原先的 `apps/web` 已删除。
+用户端骨架是 DCloud 官方预设 `uni-preset-vue`（Vite + Vue 3 + TypeScript）和免费的 `@dcloudio/uni-ui`。底部 Tab 是首页、社区、发现、消息、我的。H5 开发端口是 `43126`，`/api` 代理到 Laravel。同一套页面可以再编到 App 和小程序，本轮只跑通 H5。原先的 `apps/web` 已删除。
 
-视觉是白底和珊瑚强调色 `#ff5c39`，首页与社区用双列笔记卡片：实拍封面、版块角标、标题、头像昵称和点赞。不使用葫芦侠的绿色顶栏，也不复用小红书的标识。消息页会请求通知接口；当前返回骨架占位，页面直接说明审核结果不会推送。
+页面观感按开源笔记社区模板重排，不是手写演示壳。视觉和交互基准是 [HongShu-Ui](https://github.com/Ma-YongJian/HongShu-Ui)（MIT，Copyright (c) 2024 HongShu）里的 `hongshu-app`：首页 `pages/index` 的居中下划线 Tab、分类条和双列流，卡片 `components/hs-note-card`，详情 `pages/main`，个人页 `pages/user`，消息 `pages/message`，发布 `pages/push`。泡泡栈用 Vue 3 `<script setup>` + TypeScript 重写这些页面，数据仍走 `/api/v1`。没有拷贝 HongShu 的 Spring 后端，没有引入 Pro，也没有安装 `thorui-uni`（心形、返回、搜索用 uni-ui 的 `uni-icons`）。[dianwan/uniapp-vue3-xiaohongshu](https://github.com/dianwan/uniapp-vue3-xiaohongshu) 只有双列瀑布流的布局想法，仓库没有许可证，源码没有拷进本仓库。
+
+配色是白底 `#f8fafc`、正文 `#16160e`、强调色 `#ff2442`。首页和社区是不等高双列封面卡片：圆角阴影、标题、头像昵称、点赞。H5 在系统状态栏高度为 0 时补一条时间与信号栏，让预览接近成品 App。消息页会请求通知接口；当前返回骨架占位，页面保留「赞和收藏 / 新增关注 / 评论和@」入口，但不编造会话。点赞、收藏、评论和图片上传只展示，写入仍是二期。
 
 ## 模块边界
 

@@ -1,52 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { localCover, noteCover, noteHeight, postStatusText } from '../../utils/format'
 import type { PostItem } from '../../utils/types'
 
 const props = defineProps<{ post: PostItem; showStatus?: boolean }>()
 const emit = defineEmits<{ open: [id: number] }>()
 
-const covers = [
-  '/static/covers/cover-notes.jpg',
-  '/static/covers/cover-chat.jpg',
-  '/static/covers/cover-desk.jpg',
-  '/static/covers/cover-app.jpg',
-  '/static/covers/cover-city.jpg',
-  '/static/covers/cover-soft.jpg',
-]
-const heights = [214, 168, 246, 188, 228, 176]
-
-const avatarColors = ['#ff5c39', '#2f2a28', '#7c6cff', '#e07a5f', '#c2410c', '#3d6b8c']
-
-const cover = computed(() => props.post.cover || covers[props.post.id % covers.length])
-const photoHeight = computed(() => `${heights[props.post.id % heights.length]}px`)
+const broken = ref(false)
+const cover = computed(() => (broken.value ? localCover(props.post.id) : noteCover(props.post)))
+const photoHeight = computed(() => `${noteHeight(props.post.id)}px`)
 const author = computed(() => props.post.author?.nickname || '匿名')
 const initial = computed(() => author.value.slice(0, 1))
-const avatarColor = computed(() => avatarColors[props.post.id % avatarColors.length])
 const likes = computed(() => props.post.stats?.like ?? 0)
-const boardName = computed(() => props.post.board?.name || '')
+const liked = computed(() => likes.value > 0)
+const statusLabel = computed(() => {
+  if (!props.showStatus || !props.post.status || props.post.status === 'published') return ''
+  return postStatusText[props.post.status] || props.post.status
+})
+
+function fail(): void {
+  broken.value = true
+}
 </script>
 
+<!--
+  卡片几何对齐 HongShu-Ui（MIT）hongshu-app/components/hs-note-card：
+  白底、20rpx 圆角、细边、轻阴影、双行标题、头像昵称、心形赞。
+  未引入 thorui-uni，心形用 uni-icons。
+-->
 <template>
   <view class="card" @click="emit('open', post.id)">
     <view class="photo-wrap">
-      <image class="photo" :src="cover" mode="aspectFill" :style="{ height: photoHeight }" />
-      <text v-if="boardName" class="board">{{ boardName }}</text>
+      <image class="photo" :src="cover" mode="aspectFill" :style="{ height: photoHeight }" @error="fail" />
+      <text v-if="statusLabel" class="flag">{{ statusLabel }}</text>
     </view>
-    <view class="body">
-      <text class="title">{{ post.title }}</text>
-      <view class="meta">
-        <view class="who">
-          <view class="avatar" :style="{ background: avatarColor }">{{ initial }}</view>
-          <text class="name">{{ author }}</text>
-        </view>
-        <view class="like">
-          <uni-icons type="heart-filled" size="14" color="#ff5c39" />
-          <text>{{ likes }}</text>
-        </view>
+    <text class="title">{{ post.title }}</text>
+    <view class="meta">
+      <view class="user">
+        <view class="avatar">{{ initial }}</view>
+        <text class="name">{{ author }}</text>
       </view>
-      <text v-if="showStatus && post.status && post.status !== 'published'" class="flag">
-        {{ post.status === 'pending' ? '待审' : '未通过' }}
-      </text>
+      <view class="like">
+        <uni-icons :type="liked ? 'heart-filled' : 'heart'" size="14" :color="liked ? '#ff2442' : '#909399'" />
+        <text class="like-num" :class="{ hot: liked }">{{ likes > 0 ? likes : '赞' }}</text>
+      </view>
     </view>
   </view>
 </template>
@@ -54,88 +51,79 @@ const boardName = computed(() => props.post.board?.name || '')
 <style scoped>
 .card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  box-shadow: 0 8px 18px rgba(47, 32, 24, 0.06);
 }
 
 .photo-wrap {
   position: relative;
+  background: #f5f5f5;
 }
 
 .photo {
-  width: 100%;
   display: block;
-  background: #efe8e2;
+  width: 100%;
+  max-height: 250px;
 }
 
-.board {
+.flag {
   position: absolute;
   left: 8px;
-  bottom: 8px;
-  max-width: calc(100% - 16px);
+  top: 8px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(20, 12, 8, 0.55);
+  background: rgba(22, 22, 14, 0.62);
   color: #fff;
   font-size: 11px;
   line-height: 16px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.body {
-  padding: 8px 10px 10px;
 }
 
 .title {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  padding: 8px 8px 0;
+  font-size: 15px;
+  color: #16160e;
+  line-height: 1.4;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.35;
-  color: #1f1a17;
-  min-height: 38px;
 }
 
 .meta {
-  margin-top: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  padding: 8px;
+  gap: 6px;
 }
 
-.who {
+.user {
   display: flex;
   align-items: center;
-  gap: 6px;
   min-width: 0;
+  flex: 1;
 }
 
 .avatar {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  color: #fff;
+  background: #f3f4f6;
+  color: #16160e;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 650;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: none;
-}
-
-.name,
-.like {
-  color: #6f675f;
-  font-size: 12px;
+  flex-shrink: 0;
 }
 
 .name {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #16160e;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -144,17 +132,16 @@ const boardName = computed(() => props.post.board?.name || '')
 .like {
   display: flex;
   align-items: center;
-  gap: 3px;
-  flex: none;
+  flex-shrink: 0;
 }
 
-.flag {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #fff1ec;
-  color: #c2410c;
-  font-size: 12px;
+.like-num {
+  margin-left: 2px;
+  font-size: 11px;
+  color: #909399;
+}
+
+.like-num.hot {
+  color: #ff2442;
 }
 </style>

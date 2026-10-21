@@ -55,97 +55,90 @@ onPullDownRefresh(async () => {
 
 <template>
   <view class="page">
-    <view class="toolbar">
-      <text class="hint">按版块看已经通过审核的笔记</text>
-      <button class="write" @click="writePost">写一篇</button>
-    </view>
-    <scroll-view scroll-x class="chips" :show-scrollbar="false">
-      <view class="chip" :class="{ on: boardId === 0 }" @click="pickBoard(0)">全部</view>
-      <view
-        v-for="board in boards"
-        :key="board.id"
-        class="chip"
-        :class="{ on: boardId === board.id }"
-        @click="pickBoard(board.id)"
-      >
-        {{ board.name }}
-        <text class="count">{{ board.post_count }}</text>
+    <app-nav title="社区">
+      <template #right>
+        <text class="publish" @click="writePost">发布</text>
+      </template>
+    </app-nav>
+    <scroll-view scroll-x class="cat-scroll" :show-scrollbar="false">
+      <view class="cat-row">
+        <view class="cat" :class="{ on: boardId === 0 }" @click="pickBoard(0)">全部</view>
+        <view
+          v-for="board in boards"
+          :key="board.id"
+          class="cat"
+          :class="{ on: boardId === board.id }"
+          @click="pickBoard(board.id)"
+        >
+          {{ board.name }}
+          <text class="count">{{ board.post_count }}</text>
+        </view>
       </view>
     </scroll-view>
-    <post-feed
-      :items="posts"
-      :loading="loading"
-      :error="error"
-      empty-title="这个版块还是空的"
-      empty-text="写一篇之后，租户管理员在后台通过，这里才会出现。"
-      @retry="load"
-      @open="openPost"
-    />
+    <view class="feed">
+      <post-feed
+        :items="posts"
+        :loading="loading"
+        :error="error"
+        empty-title="这个版块还没有笔记"
+        empty-text="发布后进入待审，管理员通过才会出现在这里。"
+        @retry="load"
+        @open="openPost"
+      />
+    </view>
   </view>
 </template>
 
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 8px 8px 16px;
-  box-sizing: border-box;
+  background: #f8fafc;
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
+.publish {
+  color: #ff2442;
+  font-size: 15px;
+  font-weight: 650;
+  padding-right: 8px;
 }
 
-.hint {
-  color: #6f675f;
-  font-size: 13px;
-}
-
-.write {
-  margin: 0;
-  padding: 0 14px;
-  height: 32px;
-  line-height: 32px;
-  border-radius: 999px;
-  background: #ff5c39;
-  color: #fff;
-  font-size: 13px;
-  border: none;
-}
-
-.write::after {
-  border: none;
-}
-
-.chips {
+.cat-scroll {
+  height: 44px;
+  background: #fff;
   white-space: nowrap;
-  height: 40px;
-  margin-bottom: 12px;
 }
 
-.chip {
+.cat-row {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  padding: 0 12px;
+  height: 44px;
+  padding: 0 8px;
+}
+
+.cat {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
   margin-right: 8px;
-  border-radius: 999px;
-  background: #fff;
-  color: #3a332f;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: #f3f4f6;
+  color: #606266;
   font-size: 13px;
 }
 
-.chip.on {
-  background: #1f1a17;
+.cat.on {
+  background: #16160e;
   color: #fff;
 }
 
 .count {
-  margin-left: 6px;
-  font-size: 12px;
-  opacity: 0.7;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.72;
+}
+
+.feed {
+  padding: 8px 0 16px;
 }
 </style>

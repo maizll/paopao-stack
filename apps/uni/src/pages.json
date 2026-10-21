@@ -12,43 +12,48 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "首页",
         "enablePullDownRefresh": true,
-        "backgroundColor": "#f6f3f0"
+        "backgroundColor": "#f8fafc"
       }
     },
     {
       "path": "pages/community/community",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "社区",
         "enablePullDownRefresh": true,
-        "backgroundColor": "#f6f3f0"
+        "backgroundColor": "#f8fafc"
       }
     },
     {
       "path": "pages/discover/discover",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "发现",
         "enablePullDownRefresh": true,
-        "backgroundColor": "#f6f3f0"
+        "backgroundColor": "#f8fafc"
       }
     },
     {
       "path": "pages/messages/messages",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "消息",
-        "backgroundColor": "#f6f3f0"
+        "backgroundColor": "#f8fafc"
       }
     },
     {
       "path": "pages/mine/mine",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "我的",
         "enablePullDownRefresh": true,
-        "backgroundColor": "#f6f3f0"
+        "backgroundColor": "#f8fafc"
       }
     },
     {
       "path": "pages/post/detail",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "笔记",
         "backgroundColor": "#ffffff"
       }
@@ -56,7 +61,8 @@
     {
       "path": "pages/post/compose",
       "style": {
-        "navigationBarTitleText": "写一篇",
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "发布笔记",
         "backgroundColor": "#ffffff"
       }
     }
@@ -65,11 +71,11 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "泡泡栈",
     "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#f6f3f0"
+    "backgroundColor": "#f8fafc"
   },
   "tabBar": {
-    "color": "#8a817c",
-    "selectedColor": "#ff5c39",
+    "color": "#909399",
+    "selectedColor": "#ff2442",
     "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [
