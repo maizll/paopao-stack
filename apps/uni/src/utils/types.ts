@@ -75,3 +75,33 @@ export interface Page<T> {
   items: T[]
   meta: { page: number; per_page: number; total: number; has_more: boolean }
 }
+
+export interface CommentItem {
+  id: number
+  post_id: number
+  content: string
+  author: { id?: number; nickname: string } | null
+  parent_id: number | null
+  like_count: number
+  status: string
+  created_at: string | null
+}
+
+export interface InteractionState {
+  target_type: string
+  target_id: number
+  liked: boolean
+  favorited: boolean
+  like_count?: number | null
+  favorite_count?: number | null
+}
+
+export interface NoticeItem {
+  id: number
+  type: string
+  title: string
+  body: string
+  payload: { post_id?: number; comment_id?: number }
+  read_at: string | null
+  created_at: string | null
+}

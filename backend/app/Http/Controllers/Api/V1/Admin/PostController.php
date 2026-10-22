@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Events\PostReviewed;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Requests\Admin\UpdateAdminPostRequest;
@@ -82,6 +83,7 @@ class PostController extends ApiController
         }
 
         $post->load(['author', 'board']);
+        event(new PostReviewed($post->id, 'approved'));
 
         return $this->ok($post->toDetailArray());
     }
@@ -99,6 +101,7 @@ class PostController extends ApiController
         $post->status = 'rejected';
         $post->save();
         $post->load(['author', 'board']);
+        event(new PostReviewed($post->id, 'rejected', $request->input('reason')));
 
         return $this->ok($post->toDetailArray());
     }

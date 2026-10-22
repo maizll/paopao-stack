@@ -68,6 +68,15 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'Comments',
+        path: '/comments',
+        component: () => import('#/views/paopao/comments/index.vue'),
+        meta: {
+          icon: 'lucide:message-square-more',
+          title: '评论审核',
+        },
+      },
+      {
         name: 'Apps',
         path: '/apps',
         component: () => import('#/views/paopao/apps/index.vue'),

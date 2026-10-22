@@ -265,6 +265,8 @@
 - 写：`content`、`parent_id`（可空）、`reply_to_user_id`（可空）。
 - 读：`id`、`content`、`author`、`parent_id`、`like_count`、`created_at`、`status`。
 
+**可见规则**（与帖子审核一致）：新评论 `status=pending`。游客和他人只能看到 `published`。作者在该帖下还能看到自己的待审、拒绝和屏蔽。只有已发布笔记可以评论。通过后 `posts.comment_count` 加一；拒绝、屏蔽或删除已公开评论时减回去。计数由评论模块发事件，不在控制器里改帖子表。
+
 **依赖**：Posts、Users；赞数可读 Interactions  
 **禁止**：改 `posts.content`；禁止无帖子上下文的孤儿评论写入。
 
@@ -291,8 +293,9 @@
 
 **关键字段要点**
 
-- 写：`target_type`（`post|comment|app`）、`target_id`。
-- `status` 查询：`targets[]` → 返回 `liked`/`favorited` map。
+- 写：`target_type`（`post|comment|app`）、`target_id`。重复点赞、重复收藏返回当前状态，不报 `40901`。
+- `GET /interactions/status?targets=post:1,post:2`，最多 20 个。返回 `items[]`，每项含 `liked`、`favorited`。
+- 目标未公开时返回 `42201`。取消赞/藏可以用同样字段放在查询串。
 - 列表：回挂目标摘要（标题、封面），由本模块组装只读 DTO。
 
 **依赖**：Posts / Comments / Apps（存在性校验，只读）  
@@ -466,8 +469,9 @@
 
 **关键字段要点**
 
-- 项：`id`、`type`、`title`、`body`、`payload`（跳转用）、`read_at`、`created_at`。
-- 生产方：其他模块发领域事件 → 本模块写入；禁止 Posts 控制器直接 insert 通知表以外的乱写。
+- 项：`id`、`type`、`title`、`body`、`payload`（跳转用，含 `post_id`）、`read_at`、`created_at`。
+- 已接入的 `type`：`post.approved`、`post.rejected`、`post.liked`、`post.favorited`、`post.commented`、`comment.rejected`、`comment.hidden`。自己赞自己、自己评论自己不发提醒。
+- 生产方：帖子审核、评论审核、赞藏切换发领域事件，由通知监听器写入。帖子控制器不直接插入通知表。
 
 **依赖**：Auth；消费各模块事件  
 **禁止**：改业务主数据（帖/评论状态）。
@@ -490,7 +494,7 @@
 | 用户 | `/admin/users` | 列表、封禁/解封、角色 |
 | 版块 | `/admin/boards` | CRUD、排序 |
 | 帖子审核 | `/admin/posts` | 列表、编辑、通过/拒绝、删帖 |
-| 评论 | `/admin/comments` | 删评、屏蔽 |
+| 评论 | `/admin/comments` | 列表、通过、拒绝、屏蔽、删除 |
 | 软件 | `/admin/apps` | CRUD、上下架 |
 | 版本 | `/admin/app-versions` | 上传元数据、发布/下线 |
 | 运营 | `/admin/ops` | Banner/九宫格 CRUD |
@@ -510,7 +514,12 @@
 | GET | `/admin/posts/{id}` | 审核详情（含正文、封面） | 内容权限 | MVP |
 | PUT/PATCH | `/admin/posts/{id}` | 编辑标题、正文、版块、封面。正文是 HTML 字符串（富文本）。不接受 `status`，状态只走通过/拒绝。入库时去掉 `script` 等标签 | 内容权限 | MVP |
 | POST | `/admin/posts/{id}/approve` | 过审 | 内容权限 | MVP |
-| POST | `/admin/posts/{id}/reject` | 拒审 | 内容权限 | MVP |
+| POST | `/admin/posts/{id}/reject` | 拒审。通过或拒绝后给作者写一条站内通知 | 内容权限 | MVP |
+| GET | `/admin/comments` | 评论分页，可按 `status` 筛选 | 内容权限 | MVP |
+| POST | `/admin/comments/{id}/approve` | 评论通过并公开 | 内容权限 | MVP |
+| POST | `/admin/comments/{id}/reject` | 评论拒绝。`reason` 可选，写入作者通知 | 内容权限 | MVP |
+| POST | `/admin/comments/{id}/hide` | 屏蔽。已公开的评论同时从计数里减去 | 内容权限 | MVP |
+| DELETE | `/admin/comments/{id}` | 删除评论 | 内容权限 | MVP |
 | GET/POST/PUT/PATCH | `/admin/apps`… | 软件维护。编辑不改 `status` | 商店权限 | MVP |
 | POST | `/admin/apps/{id}/approve` | 软件通过，前台发现页可见 | 商店权限 | MVP |
 | POST | `/admin/apps/{id}/reject` | 软件拒绝。`reason` 可选，不落库 | 商店权限 | MVP |
@@ -608,6 +617,7 @@
 | 2026-10-21 | 0.1.3 | 管理端正文约定为 HTML，列表摘要仍 `strip_tags`。保存时去掉 script/iframe 和 `javascript:` 链接。响应壳未改 |
 | 2026-10-22 | 0.1.4 | 未生成安装锁时，`/api/v1` 返回 `50301`，`data.install_url` 指向 `/install`。响应壳未改 |
 | 2026-10-22 | 0.1.5 | 软件审核增加通过/拒绝；运营位 Banner/宫格可写；`POST /api/v1/uploads` 把图片存到本地 `storage`。响应壳未改。前台软件列表仍只返回 `published` |
+| 2026-10-22 | 0.1.6 | 赞藏、评论、站内通知落地。评论默认待审，公开列表只返回 `published`。赞藏幂等，计数由事件回写。通知类型覆盖审核结果、点赞、收藏和评论。响应壳未改 |
 
 ---
 

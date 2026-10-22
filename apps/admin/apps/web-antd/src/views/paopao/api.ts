@@ -163,6 +163,18 @@ export const paopaoApi = {
       `/admin/posts/${id}/reject`,
       reason ? { reason } : {},
     ),
+  comments: (params: Record<string, number | string | undefined>) =>
+    requestClient.get<PageResult<CommentRow>>('/admin/comments', { params }),
+  approveComment: (id: number) =>
+    requestClient.post<CommentRow>(`/admin/comments/${id}/approve`),
+  rejectComment: (id: number, reason?: string) =>
+    requestClient.post<CommentRow>(
+      `/admin/comments/${id}/reject`,
+      reason ? { reason } : {},
+    ),
+  hideComment: (id: number) =>
+    requestClient.post<CommentRow>(`/admin/comments/${id}/hide`),
+  deleteComment: (id: number) => requestClient.delete(`/admin/comments/${id}`),
   tenants: () => requestClient.get<PageResult<TenantRow>>('/admin/tenants'),
   unbanUser: (id: number) => requestClient.post(`/admin/users/${id}/unban`),
   users: (params: Record<string, number | string | undefined>) =>
@@ -176,6 +188,23 @@ export function formatTime(value: null | string | undefined) {
   const pad = (part: number) => String(part).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
+
+export interface CommentRow {
+  author: null | { nickname: string };
+  content: string;
+  created_at: null | string;
+  id: number;
+  post: null | { id: number; title: string };
+  post_id: number;
+  status: string;
+}
+
+export const commentStatusText: Record<string, string> = {
+  hidden: '已屏蔽',
+  pending: '待审',
+  published: '已公开',
+  rejected: '已拒绝',
+};
 
 export const postStatusText: Record<string, string> = {
   pending: '待审',

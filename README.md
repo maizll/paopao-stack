@@ -84,6 +84,8 @@ cd backend && php artisan test
 
 软件在「软件审核」里新建后是待审，通过才会出现在用户端「发现」。首页 Banner 和宫格在「运营位」里维护，只有已发布的会展示。
 
+笔记详情可以点赞和收藏，数量写回帖子。评论提交后是待审，租户管理员在「评论审核」通过后才会公开。审核结果、点赞、收藏和评论提醒出现在用户端「消息」。
+
 ## 鉴权说明
 
 响应字段按 Bearer 访问令牌约定：`access_token`、`token_type`、`expires_in`。实现是 Laravel Sanctum 的 personal access token，默认 24 小时。这不是签名 JWT；替换签发方式时不要改响应壳。

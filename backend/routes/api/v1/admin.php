@@ -8,6 +8,7 @@ Route::prefix('admin')->group(function () {
     require __DIR__.'/admin/users.php';
     require __DIR__.'/admin/boards.php';
     require __DIR__.'/admin/posts.php';
+    require __DIR__.'/admin/comments.php';
     require __DIR__.'/admin/apps.php';
     require __DIR__.'/admin/ops.php';
     require __DIR__.'/admin/reports.php';

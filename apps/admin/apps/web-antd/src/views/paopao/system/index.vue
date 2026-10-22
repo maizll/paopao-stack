@@ -52,8 +52,8 @@ onMounted(async () => {
       <Card title="还没做的部分">
         <ul class="list-disc space-y-2 pl-5 leading-7">
           <li>商城、支付、私信、短视频</li>
-          <li>评论、赞藏、下载签发、举报工单、站内通知</li>
-          <li>软件上下架写入、运营位写入、头像上传</li>
+          <li>下载签发、举报工单、关注</li>
+          <li>头像专用上传</li>
         </ul>
         <p class="mt-4 text-sm text-black/45">
           后台骨架来自 Vue Vben Admin 5.7.0 的 @vben/web-antd。
