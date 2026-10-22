@@ -119,10 +119,20 @@ function focusComposer(): void {
   uni.pageScrollTo({ selector: '#composer', duration: 200 })
 }
 
+function currentDraft(): string {
+  if (typeof document !== 'undefined') {
+    const host = document.getElementById('note-draft')
+    const field = host instanceof HTMLTextAreaElement ? host : host?.querySelector('textarea')
+    const dom = field?.value?.trim() || ''
+    if (dom) return dom
+  }
+  return draft.value.trim()
+}
+
 async function send(): Promise<void> {
   if (!post.value || sending.value) return
   if (needLogin()) return
-  const content = draft.value.trim()
+  const content = currentDraft()
   if (!content) {
     uni.showToast({ title: '先写一句评论', icon: 'none' })
     return
@@ -210,6 +220,7 @@ onLoad((query) => {
         </view>
         <view class="composer">
           <textarea
+            id="note-draft"
             v-model="draft"
             class="draft"
             maxlength="500"
