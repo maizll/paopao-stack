@@ -46,6 +46,9 @@ pnpm dev:antd
 | 健康检查 | http://127.0.0.1:43125/api/v1/system/health |
 | 用户端 H5 | http://127.0.0.1:43126 |
 | 管理后台 | http://127.0.0.1:43124 |
+| 安装向导 | http://127.0.0.1:43125/install |
+
+还没有 `backend/storage/app/install.lock` 时，打开站点或 API 会进入安装向导。已经用上面的命令迁移过的本机库，向导里不要勾选演示数据，避免覆盖示例帖。步骤见 [docs/install.md](docs/install.md)。
 
 用户端骨架是 DCloud 官方 `uni-preset-vue`（Vite + Vue 3 + TypeScript）加上免费的 `uni-ui`。笔记流的版式参考 MIT 协议的 [HongShu-Ui](https://github.com/Ma-YongJian/HongShu-Ui) `hongshu-app`（首页、详情、个人页、消息、发布和笔记卡片），用本仓库的 Vue 3 + TypeScript 页面重写，并继续请求 `/api/v1`。没有引入它的 Spring 后端、Pro 或 `thorui-uni`。底部 Tab 为首页、社区、发现、消息、我的。H5 使用 hash 路由，`/api` 代理到 `43125`。要预览微信小程序，在 `apps/uni` 执行 `npm run dev:mp-weixin`，再用开发者工具打开 `dist/dev/mp-weixin`。本仓库这一轮只保证 H5 能跑。
 

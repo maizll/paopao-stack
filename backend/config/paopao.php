@@ -18,4 +18,9 @@ return [
 
     'upload_max_mb' => 20,
 
+    /*
+    | 安装锁。文件存在表示向导已完成，/install 只显示结果，API 不再拦截。
+    */
+    'install_lock' => storage_path('app/install.lock'),
+
 ];

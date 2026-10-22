@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ApiExceptionMapper;
+use App\Http\Middleware\EnsureInstalled;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\EnsureUserTenant;
 use App\Http\Middleware\OptionalSanctum;
@@ -19,7 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            EnsureInstalled::class,
+        ]);
+
         $middleware->api(prepend: [
+            EnsureInstalled::class,
             ResolveTenant::class,
         ]);
 

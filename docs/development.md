@@ -95,7 +95,7 @@ docs/                    开发文档、API 规划、SaaS 约定
 
 列表的 `data` 为 `{ "items": [], "meta": { "page": 1, "per_page": 20, "total": 0, "has_more": false } }`。`per_page` 默认 20，超过 50 截断并记日志。排序用 `sort` 与 `order`，字段由各模块白名单决定。
 
-错误码只使用 API 规划 §1.4。实现类是 `App\Support\ApiCode` 与 `App\Support\ApiResponse`。
+错误码只使用 API 规划 §1.4。实现类是 `App\Support\ApiCode` 与 `App\Support\ApiResponse`。没有 `storage/app/install.lock` 时，站点进入 `/install`，API 返回 `50301`。安装步骤见 [安装说明](install.md)。
 
 ## 本轮不做的业务
 

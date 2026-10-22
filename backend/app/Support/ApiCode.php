@@ -26,4 +26,6 @@ final class ApiCode
     public const THROTTLED = 42901;
 
     public const SERVER = 50001;
+
+    public const NOT_INSTALLED = 50301;
 }
