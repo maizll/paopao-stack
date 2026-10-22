@@ -17,6 +17,35 @@ export class ApiError extends Error {
 
 const TENANT_KEY = 'paopao.uni.tenant'
 const TOKEN_KEY = 'paopao.uni.token'
+const LOOPBACK = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?=\/|$)/i
+
+/** 生产包写入公网源站；开发留空，请求仍走当前站点的 /api 代理。 */
+export function apiOrigin(): string {
+  return String(import.meta.env.VITE_API_BASE || '').trim().replace(/\/$/, '')
+}
+
+function apiUrl(path: string): string {
+  return `${apiOrigin()}${path}`
+}
+
+function rewriteMediaValue(value: string): string {
+  const origin = apiOrigin()
+  if (!origin) return value
+  if (value.startsWith('/storage/')) return `${origin}${value}`
+  return value.replace(LOOPBACK, origin)
+}
+
+function rewriteMedia<T>(value: T): T {
+  if (!apiOrigin()) return value
+  if (typeof value === 'string') return rewriteMediaValue(value) as T
+  if (Array.isArray(value)) return value.map((item) => rewriteMedia(item)) as T
+  if (value && typeof value === 'object') {
+    const next: Record<string, unknown> = {}
+    for (const [key, item] of Object.entries(value)) next[key] = rewriteMedia(item)
+    return next as T
+  }
+  return value
+}
 
 type Query = Record<string, string | number | undefined>
 
@@ -58,20 +87,20 @@ export function request<T>(
 
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `/api/v1${path}`,
+      url: apiUrl(`/api/v1${path}`),
       method,
       data,
       header,
       success(res) {
         const body = res.data as Envelope<T>
         if (res.statusCode >= 200 && res.statusCode < 300 && body && body.code === 0) {
-          resolve(body.data)
+          resolve(rewriteMedia(body.data))
           return
         }
         reject(new ApiError(body?.message || '请求失败', body?.code || res.statusCode))
       },
       fail() {
-        reject(new ApiError('连不上 API。请确认后端正在 43125 端口运行。', 50001))
+        reject(new ApiError('连不上 API。请确认公网接口或本机 43125 端口仍在运行。', 50001))
       },
     })
   })
@@ -85,7 +114,7 @@ export function uploadImage(filePath: string): Promise<{ path: string; url: stri
     const auth = token()
     if (auth) header.Authorization = `Bearer ${auth}`
     uni.uploadFile({
-      url: '/api/v1/uploads',
+      url: apiUrl('/api/v1/uploads'),
       filePath,
       name: 'file',
       header,
@@ -97,13 +126,13 @@ export function uploadImage(filePath: string): Promise<{ path: string; url: stri
           body = null
         }
         if (res.statusCode >= 200 && res.statusCode < 300 && body && body.code === 0) {
-          resolve(body.data)
+          resolve(rewriteMedia(body.data))
           return
         }
         reject(new ApiError(body?.message || '上传失败', body?.code || res.statusCode))
       },
       fail() {
-        reject(new ApiError('图片没有传上去。请确认后端正在 43125 端口运行。', 50001))
+        reject(new ApiError('图片没有传上去。请确认公网接口或本机 43125 端口仍在运行。', 50001))
       },
     })
   })

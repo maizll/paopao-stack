@@ -89,6 +89,11 @@ class ResolveTenant
             return null;
         }
 
+        // Cloudflare Quick Tunnel 的随机主机不是租户子域，回落到默认租户。
+        if ($host === 'trycloudflare.com' || str_ends_with($host, '.trycloudflare.com')) {
+            return null;
+        }
+
         $parts = explode('.', $host);
         $isLocalhostSub = count($parts) === 2 && $parts[1] === 'localhost';
 
