@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config'
 import type { Page } from './types'
 
 interface Envelope<T> {
@@ -19,9 +20,12 @@ const TENANT_KEY = 'paopao.uni.tenant'
 const TOKEN_KEY = 'paopao.uni.token'
 const LOOPBACK = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?=\/|$)/i
 
-/** 生产包写入公网源站；开发留空，请求仍走当前站点的 /api 代理。 */
+/** 生产包使用 config.ts 的公网地址；H5 开发留空，请求走当前站点的 /api 代理。 */
 export function apiOrigin(): string {
-  return String(import.meta.env.VITE_API_BASE || '').trim().replace(/\/$/, '')
+  // #ifdef H5
+  if (import.meta.env.DEV) return ''
+  // #endif
+  return API_BASE_URL.trim().replace(/\/$/, '')
 }
 
 function apiUrl(path: string): string {
