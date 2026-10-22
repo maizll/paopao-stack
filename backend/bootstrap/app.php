@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Render 和临时隧道都在反向代理后面，需要相信转发过来的协议和主机。
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             EnsureInstalled::class,
         ]);

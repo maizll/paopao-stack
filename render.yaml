@@ -1,0 +1,48 @@
+# Render Blueprint。在 Dashboard 里 New > Blueprint 选这个文件，或按 docs/render.md 手工建服务。
+databases:
+  - name: paopao-db
+    plan: free
+    databaseName: paopao
+    user: paopao
+
+services:
+  - type: web
+    name: paopao-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: 泡泡栈
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_SSLMODE
+        value: prefer
+      - key: DATABASE_URL
+        fromDatabase:
+          name: paopao-db
+          property: connectionString
+      - key: TENANT_DEFAULT_SLUG
+        value: demo
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: PAOPAO_SEED
+        value: "true"

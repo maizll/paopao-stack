@@ -89,9 +89,12 @@ class ResolveTenant
             return null;
         }
 
-        // Cloudflare Quick Tunnel 的随机主机不是租户子域，回落到默认租户。
-        if ($host === 'trycloudflare.com' || str_ends_with($host, '.trycloudflare.com')) {
-            return null;
+        // 平台分配的主机不是租户子域，回落到 TENANT_DEFAULT_SLUG。
+        // trycloudflare.com 只是临时通道；正式环境用 Render 的 onrender.com。
+        foreach (['trycloudflare.com', 'onrender.com'] as $suffix) {
+            if ($host === $suffix || str_ends_with($host, '.'.$suffix)) {
+                return null;
+            }
         }
 
         $parts = explode('.', $host);

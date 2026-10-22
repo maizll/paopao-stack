@@ -278,6 +278,22 @@ class PaopaoApiTest extends TestCase
             ->assertJsonStructure(['data' => ['errors' => ['account', 'password']]]);
     }
 
+    public function test_platform_hosts_are_not_treated_as_tenant_subdomains(): void
+    {
+        foreach ([
+            'https://paopao-api.onrender.com/api/v1/system/health',
+            'https://example.trycloudflare.com/api/v1/system/health',
+        ] as $url) {
+            $this->getJson($url)
+                ->assertOk()
+                ->assertJsonPath('code', 0);
+        }
+
+        $this->getJson('https://missing.example.com/api/v1/system/health')
+            ->assertNotFound()
+            ->assertJsonPath('code', 40401);
+    }
+
     private function tenant(string $slug): Tenant
     {
         return Tenant::query()->create([
