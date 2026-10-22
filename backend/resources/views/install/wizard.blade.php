@@ -1,111 +1,131 @@
 @extends('install.layout')
 
 @section('content')
-    <div data-panel="0">
-        <h2>环境检测</h2>
-        <p class="lead">必过项全部通过后才能继续。标成可选的项目失败时会用红字说明原因，但不会拦住安装。</p>
-        <div id="checks" class="checks"></div>
-        <p id="env-msg" class="msg" hidden></p>
-        <div class="actions">
-            <button class="ghost" id="recheck" type="button">重新检测</button>
-            <button class="primary" id="env-next" type="button" disabled>下一步</button>
+    <div class="panel" data-panel="0">
+        <div class="panel-scroll">
+            <h2>环境检测</h2>
+            <p class="lead">必过项全部通过后才能继续。标成可选的项目失败时会用红字说明原因，但不会拦住安装。</p>
+            <div id="checks" class="checks"></div>
+        </div>
+        <div class="dock">
+            <p id="env-msg" class="msg" hidden></p>
+            <div class="actions">
+                <button class="ghost" id="recheck" type="button">重新检测</button>
+                <button class="primary" id="env-next" type="button" disabled>下一步</button>
+            </div>
         </div>
     </div>
 
-    <div data-panel="1" hidden>
-        <h2>数据库</h2>
-        <p class="lead">填写 MySQL 或 MariaDB。必须先测试连接，成功后才能进入下一步。库不存在且账号有权限时，会自动创建。</p>
-        <div class="grid">
-            <div>
-                <label for="db-host">主机</label>
-                <input id="db-host" value="127.0.0.1" autocomplete="off">
+    <div class="panel" data-panel="1" hidden>
+        <div class="panel-scroll">
+            <h2>数据库</h2>
+            <p class="lead">填写 MySQL 或 MariaDB。必须先测试连接，成功后才能进入下一步。库不存在且账号有权限时，会自动创建。</p>
+            <div class="grid">
+                <div>
+                    <label for="db-host">主机</label>
+                    <input id="db-host" value="127.0.0.1" autocomplete="off">
+                </div>
+                <div>
+                    <label for="db-port">端口</label>
+                    <input id="db-port" value="3306" inputmode="numeric" autocomplete="off">
+                </div>
             </div>
-            <div>
-                <label for="db-port">端口</label>
-                <input id="db-port" value="3306" inputmode="numeric" autocomplete="off">
-            </div>
-        </div>
-        <label for="db-name">数据库名</label>
-        <input id="db-name" value="paopao" autocomplete="off">
-        <div class="grid">
-            <div>
-                <label for="db-user">账号</label>
-                <input id="db-user" value="paopao" autocomplete="off">
-            </div>
-            <div>
-                <label for="db-pass">密码</label>
-                <input id="db-pass" type="password" autocomplete="new-password">
-            </div>
-        </div>
-        <p id="db-msg" class="msg" hidden></p>
-        <div class="actions">
-            <button class="ghost" type="button" data-back>上一步</button>
-            <button class="ghost" id="db-test" type="button">测试连接</button>
-            <button class="primary" id="db-next" type="button" disabled>下一步</button>
-        </div>
-    </div>
-
-    <div data-panel="2" hidden>
-        <h2>管理员账号</h2>
-        <p class="lead">这是平台超管，不属于任何一个租户。密码至少 8 位，请单独保管。</p>
-        <label for="admin-name">昵称</label>
-        <input id="admin-name" placeholder="平台超管" autocomplete="off">
-        <label for="admin-email">邮箱</label>
-        <input id="admin-email" type="email" placeholder="super@example.com" autocomplete="off">
-        <div class="grid">
-            <div>
-                <label for="admin-pass">密码</label>
-                <input id="admin-pass" type="password" autocomplete="new-password">
-            </div>
-            <div>
-                <label for="admin-pass2">确认密码</label>
-                <input id="admin-pass2" type="password" autocomplete="new-password">
+            <label for="db-name">数据库名</label>
+            <input id="db-name" value="paopao" autocomplete="off">
+            <div class="grid">
+                <div>
+                    <label for="db-user">账号</label>
+                    <input id="db-user" value="paopao" autocomplete="off">
+                </div>
+                <div>
+                    <label for="db-pass">密码</label>
+                    <input id="db-pass" type="password" autocomplete="new-password">
+                </div>
             </div>
         </div>
-        <p id="admin-msg" class="msg" hidden></p>
-        <div class="actions">
-            <button class="ghost" type="button" data-back>上一步</button>
-            <button class="primary" id="admin-next" type="button">下一步</button>
+        <div class="dock">
+            <p id="db-msg" class="msg" hidden></p>
+            <div class="actions">
+                <button class="ghost" type="button" data-back>上一步</button>
+                <button class="ghost" id="db-test" type="button">测试连接</button>
+                <button class="primary" id="db-next" type="button" disabled>下一步</button>
+            </div>
         </div>
     </div>
 
-    <div data-panel="3" hidden>
-        <h2>站点与租户</h2>
-        <p class="lead">站点名称写入配置。租户是第一套圈子，标识会作为默认租户头。演示数据只建议在本机勾选。</p>
-        <label for="site-name">站点名称</label>
-        <input id="site-name" value="泡泡栈">
-        <label for="site-url">站点地址</label>
-        <input id="site-url" type="url" value="http://127.0.0.1:43125">
-        <div class="grid">
-            <div>
-                <label for="tenant-name">租户名称</label>
-                <input id="tenant-name" value="泡泡栈演示租户">
-            </div>
-            <div>
-                <label for="tenant-slug">租户标识</label>
-                <input id="tenant-slug" value="demo" autocomplete="off">
+    <div class="panel" data-panel="2" hidden>
+        <div class="panel-scroll">
+            <h2>管理员账号</h2>
+            <p class="lead">这是平台超管，不属于任何一个租户。密码至少 8 位，请单独保管。</p>
+            <label for="admin-name">昵称</label>
+            <input id="admin-name" placeholder="平台超管" autocomplete="off">
+            <label for="admin-email">邮箱</label>
+            <input id="admin-email" type="email" placeholder="super@example.com" autocomplete="off">
+            <div class="grid">
+                <div>
+                    <label for="admin-pass">密码</label>
+                    <input id="admin-pass" type="password" autocomplete="new-password">
+                </div>
+                <div>
+                    <label for="admin-pass2">确认密码</label>
+                    <input id="admin-pass2" type="password" autocomplete="new-password">
+                </div>
             </div>
         </div>
-        <label class="choice">
-            <input id="seed-demo" type="checkbox">
-            <span>写入演示数据。包含示例成员、版块、一篇已发布帖子和一个示例软件。已有同名数据时按标识更新，不会另起一套库。</span>
-        </label>
-        <p id="site-msg" class="msg" hidden></p>
-        <div class="actions">
-            <button class="ghost" type="button" data-back>上一步</button>
-            <button class="primary" id="site-next" type="button">下一步</button>
+        <div class="dock">
+            <p id="admin-msg" class="msg" hidden></p>
+            <div class="actions">
+                <button class="ghost" type="button" data-back>上一步</button>
+                <button class="primary" id="admin-next" type="button">下一步</button>
+            </div>
         </div>
     </div>
 
-    <div data-panel="4" hidden>
-        <h2>写入配置并安装</h2>
-        <p class="lead">确认后会写入 .env、执行迁移、创建平台超管和租户。失败不会生成安装锁，可以返回修改后重试。</p>
-        <dl class="summary" id="review"></dl>
-        <p id="run-msg" class="msg" hidden></p>
-        <ul class="log" id="run-log" hidden></ul>
-        <div class="actions">
-            <button class="ghost" type="button" data-back>上一步</button>
-            <button class="primary" id="run" type="button">开始安装</button>
+    <div class="panel" data-panel="3" hidden>
+        <div class="panel-scroll">
+            <h2>站点与租户</h2>
+            <p class="lead">站点名称写入配置。租户是第一套圈子，标识会作为默认租户头。演示数据只建议在本机勾选。</p>
+            <label for="site-name">站点名称</label>
+            <input id="site-name" value="泡泡栈">
+            <label for="site-url">站点地址</label>
+            <input id="site-url" type="url" value="http://127.0.0.1:43125">
+            <div class="grid">
+                <div>
+                    <label for="tenant-name">租户名称</label>
+                    <input id="tenant-name" value="泡泡栈演示租户">
+                </div>
+                <div>
+                    <label for="tenant-slug">租户标识</label>
+                    <input id="tenant-slug" value="demo" autocomplete="off">
+                </div>
+            </div>
+            <label class="choice">
+                <input id="seed-demo" type="checkbox">
+                <span>写入演示数据。包含示例成员、版块、一篇已发布帖子和一个示例软件。已有同名数据时按标识更新，不会另起一套库。已有正式内容时不要勾选，避免把版块帖子数和示例帖覆盖成种子数据。</span>
+            </label>
+        </div>
+        <div class="dock">
+            <p id="site-msg" class="msg" hidden></p>
+            <div class="actions">
+                <button class="ghost" type="button" data-back>上一步</button>
+                <button class="primary" id="site-next" type="button">下一步</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" data-panel="4" hidden>
+        <div class="panel-scroll">
+            <h2>写入配置并安装</h2>
+            <p class="lead">确认后会写入 .env、执行迁移、创建平台超管和租户。失败不会生成安装锁，可以返回修改后重试。</p>
+            <dl class="summary" id="review"></dl>
+            <ul class="log" id="run-log" hidden></ul>
+        </div>
+        <div class="dock">
+            <p id="run-msg" class="msg" hidden></p>
+            <div class="actions">
+                <button class="ghost" type="button" data-back>上一步</button>
+                <button class="primary" id="run" type="button">开始安装</button>
+            </div>
         </div>
     </div>
 @endsection
@@ -159,6 +179,8 @@ function render(next) {
     item.classList.toggle('on', index === step)
     item.classList.toggle('done', index < step)
   })
+  const scroller = document.querySelector('[data-panel="' + step + '"] .panel-scroll')
+  if (scroller) scroller.scrollTop = 0
 }
 
 async function loadEnv() {
@@ -297,6 +319,7 @@ document.getElementById('run').addEventListener('click', async () => {
 document.querySelectorAll('[data-back]').forEach((button) => {
   button.addEventListener('click', () => render(Math.max(0, step - 1)))
 })
+render(0)
 loadEnv()
 </script>
 @endsection
