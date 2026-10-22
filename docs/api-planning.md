@@ -406,6 +406,20 @@
 **依赖**：无强依赖；链接解析前端处理  
 **禁止**：前台写运营数据；不在此接口返回用户隐私。
 
+### 3.10.1 Uploads · 图片上传
+
+**职责边界**  
+登录用户上传封面、正文插图、软件图标和运营位图片。文件只进本地 `public` 磁盘，不接对象存储。
+
+**路由**：`POST /api/v1/uploads`  
+鉴权：当前租户 + 登录用户（成员或管理员均可）。
+
+| 字段 | 说明 |
+|---|---|
+| `file` | 必填，JPG / PNG / WEBP / GIF，最大 5 MB |
+
+响应 `data`：`url`（可直接给封面或 Banner）、`path`（磁盘相对路径）。不返回原文件名。
+
 ---
 
 ### 3.11 Reports · 举报
@@ -497,10 +511,12 @@
 | PUT/PATCH | `/admin/posts/{id}` | 编辑标题、正文、版块、封面。正文是 HTML 字符串（富文本）。不接受 `status`，状态只走通过/拒绝。入库时去掉 `script` 等标签 | 内容权限 | MVP |
 | POST | `/admin/posts/{id}/approve` | 过审 | 内容权限 | MVP |
 | POST | `/admin/posts/{id}/reject` | 拒审 | 内容权限 | MVP |
-| GET/POST/PATCH | `/admin/apps`… | 软件维护 | 商店权限 | MVP |
+| GET/POST/PUT/PATCH | `/admin/apps`… | 软件维护。编辑不改 `status` | 商店权限 | MVP |
+| POST | `/admin/apps/{id}/approve` | 软件通过，前台发现页可见 | 商店权限 | MVP |
+| POST | `/admin/apps/{id}/reject` | 软件拒绝。`reason` 可选，不落库 | 商店权限 | MVP |
 | GET/POST/PATCH | `/admin/app-versions`… | 版本发布 | 商店权限 | MVP |
-| GET/POST/PATCH/DELETE | `/admin/ops/banners`… | Banner | 运营权限 | MVP |
-| GET/POST/PATCH/DELETE | `/admin/ops/grid`… | 九宫格 | 运营权限 | MVP |
+| GET/POST/PUT/PATCH/DELETE | `/admin/ops/banners`… | Banner。`status=draft` 不出现在前台 | 运营权限 | MVP |
+| GET/POST/PUT/PATCH/DELETE | `/admin/ops/grid`… | 九宫格。`status=draft` 不出现在前台 | 运营权限 | MVP |
 | GET | `/admin/reports` | 举报队列 | 治理权限 | MVP |
 | POST | `/admin/reports/{id}/resolve` | 处理完成 | 治理权限 | MVP |
 | GET | `/admin/stats/overview` | 数据概览 | 报表权限 | 二期 |
@@ -591,6 +607,7 @@
 | 2026-10-21 | 0.1.2 | Admin 帖子增加 `PUT/PATCH /admin/posts/{id}`：改标题、正文、版块、封面。状态仍只由通过/拒绝改变。响应壳未改 |
 | 2026-10-21 | 0.1.3 | 管理端正文约定为 HTML，列表摘要仍 `strip_tags`。保存时去掉 script/iframe 和 `javascript:` 链接。响应壳未改 |
 | 2026-10-22 | 0.1.4 | 未生成安装锁时，`/api/v1` 返回 `50301`，`data.install_url` 指向 `/install`。响应壳未改 |
+| 2026-10-22 | 0.1.5 | 软件审核增加通过/拒绝；运营位 Banner/宫格可写；`POST /api/v1/uploads` 把图片存到本地 `storage`。响应壳未改。前台软件列表仍只返回 `published` |
 
 ---
 

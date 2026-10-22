@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { Page } from '@vben/common-ui';
 import { VbenTiptap } from '@vben/plugins/tiptap';
 
-import { Alert, Button, Card, Form, Input, message, Select, Spin, Tag } from 'ant-design-vue';
+import { Alert, Button, Card, Form, Input, message, Select, Spin, Tag, Upload } from 'ant-design-vue';
 
 import {
   formatTime,
@@ -114,6 +114,32 @@ function back() {
   router.push('/posts');
 }
 
+const imageUpload = {
+  accept: 'image/jpeg,image/png,image/webp,image/gif',
+  maxSize: 5 * 1024 * 1024,
+  upload: async (file: File) => {
+    const result = await paopaoApi.uploadImage(file);
+    return result.url;
+  },
+};
+
+async function uploadCover(options: {
+  file: File;
+  onError?: (error: Error) => void;
+  onSuccess?: (body: unknown) => void;
+}) {
+  try {
+    const result = await paopaoApi.uploadImage(options.file);
+    form.cover = result.url;
+    options.onSuccess?.(result);
+    message.success('封面已上传');
+  } catch (cause) {
+    const error = cause instanceof Error ? cause : new Error('上传失败');
+    options.onError?.(error);
+    message.error(error.message);
+  }
+}
+
 onMounted(() => {
   void load();
 });
@@ -151,8 +177,25 @@ onMounted(() => {
                   placeholder="选择版块"
                 />
               </Form.Item>
-              <Form.Item label="封面地址">
-                <Input v-model:value="form.cover" :maxlength="255" placeholder="图片 URL，可留空" />
+              <Form.Item class="min-w-0" label="封面">
+                <div class="flex min-w-0 flex-col gap-2">
+                  <img
+                    v-if="form.cover"
+                    :src="form.cover"
+                    alt=""
+                    class="h-28 w-full max-w-full rounded-lg object-cover"
+                  />
+                  <div class="flex flex-wrap gap-2">
+                    <Upload
+                      :custom-request="uploadCover"
+                      :show-upload-list="false"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                    >
+                      <Button>上传封面</Button>
+                    </Upload>
+                    <Button v-if="form.cover" @click="form.cover = ''">移除</Button>
+                  </div>
+                </div>
               </Form.Item>
             </div>
           </Form>
@@ -160,12 +203,13 @@ onMounted(() => {
         <Card title="正文">
           <VbenTiptap
             v-model="form.content"
+            :image-upload="imageUpload"
             :max-height="720"
             :min-height="480"
-            placeholder="写正文。可以加粗、设标题、列清单、插链接，图片填写地址。"
+            placeholder="写正文。可以加粗、设标题、列清单、插链接，图片从本地上传。"
           />
           <p class="mt-3 text-xs text-black/45">
-            正文按 HTML 保存。插图使用图片地址，当前没有上传接口。
+            正文按 HTML 保存。封面和正文图片都上传到本机存储。
           </p>
         </Card>
       </template>

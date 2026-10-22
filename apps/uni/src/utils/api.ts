@@ -77,6 +77,38 @@ export function request<T>(
   })
 }
 
+export function uploadImage(filePath: string): Promise<{ path: string; url: string }> {
+  return new Promise((resolve, reject) => {
+    const header: Record<string, string> = { Accept: 'application/json' }
+    const slug = tenantSlug()
+    if (slug) header['X-Tenant-Id'] = slug
+    const auth = token()
+    if (auth) header.Authorization = `Bearer ${auth}`
+    uni.uploadFile({
+      url: '/api/v1/uploads',
+      filePath,
+      name: 'file',
+      header,
+      success(res) {
+        let body: Envelope<{ path: string; url: string }> | null = null
+        try {
+          body = JSON.parse(res.data) as Envelope<{ path: string; url: string }>
+        } catch {
+          body = null
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300 && body && body.code === 0) {
+          resolve(body.data)
+          return
+        }
+        reject(new ApiError(body?.message || '上传失败', body?.code || res.statusCode))
+      },
+      fail() {
+        reject(new ApiError('图片没有传上去。请确认后端正在 43125 端口运行。', 50001))
+      },
+    })
+  })
+}
+
 export function splitColumns<T>(items: T[]): { left: T[]; right: T[] } {
   const left: T[] = []
   const right: T[] = []

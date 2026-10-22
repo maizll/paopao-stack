@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { ApiError, request, token } from '../../utils/api'
+import { ApiError, request, token, uploadImage } from '../../utils/api'
 import type { Board } from '../../utils/types'
 
 const boards = ref<Board[]>([])
 const boardId = ref(0)
 const title = ref('')
 const content = ref('')
+const cover = ref('')
 const error = ref('')
 const submitting = ref(false)
 const ready = ref(false)
@@ -42,8 +43,25 @@ function back(): void {
   else uni.switchTab({ url: '/pages/community/community' })
 }
 
-function soonCover(): void {
-  uni.showToast({ title: '上传还没开放', icon: 'none' })
+function chooseCover(): void {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const filePath = res.tempFilePaths[0]
+      if (!filePath) return
+      uni.showLoading({ title: '上传中' })
+      try {
+        const uploaded = await uploadImage(filePath)
+        cover.value = uploaded.url
+      } catch (cause) {
+        uni.showToast({ title: cause instanceof ApiError ? cause.message : '上传失败', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
+    },
+  })
 }
 
 async function submit(): Promise<void> {
@@ -65,6 +83,7 @@ async function submit(): Promise<void> {
         board_id: boardId.value,
         title: title.value.trim(),
         content: content.value.trim(),
+        cover: cover.value || undefined,
       },
     })
     uni.showToast({ title: '已提交，等待审核', icon: 'none' })
@@ -95,15 +114,12 @@ onShow(() => {
 
     <view class="editor">
       <view class="media-row">
-        <view class="media">
-          <image class="media-img" src="/static/covers/cover-notes.jpg" mode="aspectFill" />
-          <text class="media-badge">默认封面</text>
-        </view>
-        <view class="media add" @click="soonCover">
-          <uni-icons type="plusempty" size="26" color="#c0c4cc" />
+        <view class="media" @click="chooseCover">
+          <image class="media-img" :src="cover || '/static/covers/cover-notes.jpg'" mode="aspectFill" />
+          <text class="media-badge">{{ cover ? '更换封面' : '上传封面' }}</text>
         </view>
       </view>
-      <text class="media-tip">封面地址由管理员在审核时填写，这里不能上传。</text>
+      <text class="media-tip">点封面从相册上传。不上传时不带封面图。</text>
       <input v-model="title" class="title-input" maxlength="80" placeholder="填写标题会有更多赞哦" placeholder-class="ph" />
       <textarea
         v-model="content"
@@ -213,6 +229,9 @@ onShow(() => {
 }
 
 .title-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   margin-top: 16px;
   height: 44px;
   font-size: 18px;
@@ -223,6 +242,7 @@ onShow(() => {
 
 .content-input {
   width: 100%;
+  box-sizing: border-box;
   height: 160px;
   margin-top: 12px;
   font-size: 15px;
@@ -278,6 +298,8 @@ onShow(() => {
 }
 
 .publish {
+  width: 100%;
+  box-sizing: border-box;
   height: 44px;
   line-height: 44px;
   border-radius: 22px;

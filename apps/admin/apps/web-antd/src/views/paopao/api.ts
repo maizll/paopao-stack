@@ -42,8 +42,10 @@ export interface TenantRow {
 }
 
 export interface AppRow {
-  category: null | { name: string };
+  category: null | { id: number; name: string };
+  description?: null | string;
   download_count: number;
+  icon?: null | string;
   id: number;
   latest_version: null | { version_name: string };
   name: string;
@@ -51,23 +53,69 @@ export interface AppRow {
   summary: null | string;
 }
 
+export interface AppInput {
+  category_id?: null | number;
+  description?: null | string;
+  icon?: null | string;
+  name: string;
+  summary?: null | string;
+}
+
 export interface BannerRow {
+  end_at?: null | string;
   id: number;
+  image: string;
   link_type: string;
+  link_value: null | string;
   sort: number;
+  start_at?: null | string;
+  status: string;
   title: null | string;
 }
 
 export interface GridRow {
   badge: null | string;
+  icon: null | string;
   id: number;
+  link_type: string;
+  link_value: null | string;
   sort: number;
+  status: string;
   title: string;
+}
+
+export interface UploadResult {
+  path: string;
+  url: string;
 }
 
 export const paopaoApi = {
   apps: (params: Record<string, number | string | undefined>) =>
     requestClient.get<PageResult<AppRow>>('/admin/apps', { params }),
+  app: (id: number) => requestClient.get<AppRow>(`/admin/apps/${id}`),
+  approveApp: (id: number) => requestClient.post<AppRow>(`/admin/apps/${id}/approve`),
+  categories: () =>
+    requestClient.get<Array<{ id: number; name: string }>>('/apps/categories'),
+  createApp: (body: AppInput) => requestClient.post<AppRow>('/admin/apps', body),
+  createBanner: (body: Omit<BannerRow, 'id'>) =>
+    requestClient.post<BannerRow>('/admin/ops/banners', body),
+  createGrid: (body: Omit<GridRow, 'id'>) =>
+    requestClient.post<GridRow>('/admin/ops/grid', body),
+  deleteBanner: (id: number) => requestClient.delete(`/admin/ops/banners/${id}`),
+  deleteGrid: (id: number) => requestClient.delete(`/admin/ops/grid/${id}`),
+  rejectApp: (id: number, reason?: string) =>
+    requestClient.post<AppRow>(
+      `/admin/apps/${id}/reject`,
+      reason ? { reason } : {},
+    ),
+  updateApp: (id: number, body: AppInput) =>
+    requestClient.put<AppRow>(`/admin/apps/${id}`, body),
+  updateBanner: (id: number, body: Omit<BannerRow, 'id'>) =>
+    requestClient.put<BannerRow>(`/admin/ops/banners/${id}`, body),
+  updateGrid: (id: number, body: Omit<GridRow, 'id'>) =>
+    requestClient.put<GridRow>(`/admin/ops/grid/${id}`, body),
+  uploadImage: (file: File) =>
+    requestClient.upload<UploadResult>('/uploads', { file }),
   approvePost: (id: number) => requestClient.post(`/admin/posts/${id}/approve`),
   banners: () => requestClient.get<BannerRow[]>('/admin/ops/banners'),
   banUser: (id: number) => requestClient.post(`/admin/users/${id}/ban`),
@@ -133,6 +181,19 @@ export const postStatusText: Record<string, string> = {
   pending: '待审',
   published: '已发布',
   rejected: '已拒绝',
+};
+
+export const appStatusText: Record<string, string> = {
+  draft: '待审',
+  published: '已发布',
+  rejected: '已拒绝',
+};
+
+export const linkTypeText: Record<string, string> = {
+  app: '软件',
+  board: '版块',
+  post: '帖子',
+  url: '链接',
 };
 
 export const roleText: Record<string, string> = {

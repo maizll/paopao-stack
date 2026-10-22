@@ -44,7 +44,7 @@ docs/                    开发文档、API 规划、SaaS 约定
 
 页面观感按开源笔记社区模板重排，不是手写演示壳。视觉和交互基准是 [HongShu-Ui](https://github.com/Ma-YongJian/HongShu-Ui)（MIT，Copyright (c) 2024 HongShu）里的 `hongshu-app`：首页 `pages/index` 的居中下划线 Tab、分类条和双列流，卡片 `components/hs-note-card`，详情 `pages/main`，个人页 `pages/user`，消息 `pages/message`，发布 `pages/push`。泡泡栈用 Vue 3 `<script setup>` + TypeScript 重写这些页面，数据仍走 `/api/v1`。没有拷贝 HongShu 的 Spring 后端，没有引入 Pro，也没有安装 `thorui-uni`（心形、返回、搜索用 uni-ui 的 `uni-icons`）。[dianwan/uniapp-vue3-xiaohongshu](https://github.com/dianwan/uniapp-vue3-xiaohongshu) 只有双列瀑布流的布局想法，仓库没有许可证，源码没有拷进本仓库。
 
-配色是白底 `#f8fafc`、正文 `#16160e`、强调色 `#ff2442`。首页和社区是不等高双列封面卡片：圆角阴影、标题、头像昵称、点赞。H5 在系统状态栏高度为 0 时补一条时间与信号栏，让预览接近成品 App。消息页会请求通知接口；当前返回骨架占位，页面保留「赞和收藏 / 新增关注 / 评论和@」入口，但不编造会话。点赞、收藏、评论和图片上传只展示，写入仍是二期。
+配色是白底 `#f8fafc`、正文 `#16160e`、强调色 `#ff2442`。首页在双列笔记上方展示已发布 Banner 和宫格。社区是不等高双列封面卡片。发现页只列已通过的软件。H5 在系统状态栏高度为 0 时补一条时间与信号栏。消息页会请求通知接口；当前返回骨架占位，页面保留「赞和收藏 / 新增关注 / 评论和@」入口，但不编造会话。点赞、收藏、评论写入仍是二期。发帖封面可以上传图片。
 
 ## 模块边界
 
@@ -59,8 +59,9 @@ docs/                    开发文档、API 规划、SaaS 约定
 | Posts | `/api/v1/posts` | 列表、详情、发帖（待审）、作者修改待审帖、软删 |
 | Apps | `/api/v1/apps` | 已发布软件、分类、关联帖子 |
 | AppVersions | `/api/v1/apps/{id}/versions` | 已发布版本只读 |
-| Ops | `/api/v1/ops` | Banner、九宫格只读 |
-| Admin | `/api/v1/admin` | 管理员登录、租户开通、用户封禁、版块维护、帖子审核 |
+| Ops | `/api/v1/ops` | 已发布 Banner、宫格只读；草稿只在管理端 |
+| Uploads | `/api/v1/uploads` | 登录用户上传图片到本地 public 磁盘 |
+| Admin | `/api/v1/admin` | 管理员登录、租户开通、用户封禁、版块维护、帖子审核、软件审核、运营位 |
 | Tenants | `/api/v1/admin/tenants` | 仅平台超管 |
 | Comments、Interactions、Downloads、Reports、Notifications | 已注册 | 返回 `42201` 骨架占位 |
 
@@ -100,9 +101,10 @@ docs/                    开发文档、API 规划、SaaS 约定
 ## 本轮不做的业务
 
 - 评论、赞藏、下载签发、举报工单、站内通知的落库
-- 软件与版本在后台的创建 / 上下架写入（列表可读）
-- 运营位的写入
-- 头像上传与对象存储
+- 软件安装包上传与版本发布写入
+- 头像专用接口（封面和运营图走通用上传）
 - 商城、支付、私信、短视频
 
-本地演示数据里已有已发布帖子、一个示例软件和一组运营位。成员发帖后状态为 `pending`，正文是纯文本。租户管理员在编辑页用 Tiptap 改成 HTML（加粗、标题、列表、链接、按 URL 插图），再 `PUT /api/v1/admin/posts/{id}`。封面字段也是 URL，没有上传接口。`content` 最长 20000 字符，列表摘要用 `strip_tags`。通过后用户端详情用富文本渲染 HTML，纯文本帖子仍按原文显示。
+本地演示数据里已有已发布帖子、一个示例软件和一组运营位。成员发帖后状态为 `pending`，正文是纯文本。租户管理员在编辑页用 Tiptap 改成 HTML，再 `PUT /api/v1/admin/posts/{id}`。封面和正文图片走 `POST /api/v1/uploads`，文件落在 `storage/app/public/uploads/{租户}`，返回的地址挂在 `APP_URL/storage` 下。本机需要先执行 `php artisan storage:link`，符号链接不进仓库。`content` 最长 20000 字符，列表摘要用 `strip_tags`。通过后用户端详情用富文本渲染 HTML。
+
+软件在后台新建后是 `draft`，`POST /admin/apps/{id}/approve` 之后才出现在发现页；拒绝后前台列表不再返回。运营位草稿同样不会出现在首页。首页读取 `/ops/banners` 和 `/ops/grid`。

@@ -9,7 +9,10 @@ $admin = ['tenant.required', 'auth:sanctum', 'tenant.user', 'role:tenant_admin,p
 Route::prefix('apps')->middleware($admin)->group(function () {
     Route::get('/', [AppController::class, 'index']);
     Route::post('/', [AppController::class, 'store']);
-    Route::patch('{app}', [AppController::class, 'update'])->whereNumber('app');
+    Route::get('{app}', [AppController::class, 'show'])->whereNumber('app');
+    Route::match(['put', 'patch'], '{app}', [AppController::class, 'update'])->whereNumber('app');
+    Route::post('{app}/approve', [AppController::class, 'approve'])->whereNumber('app');
+    Route::post('{app}/reject', [AppController::class, 'reject'])->whereNumber('app');
 });
 
 Route::prefix('app-versions')->middleware($admin)->group(function () {

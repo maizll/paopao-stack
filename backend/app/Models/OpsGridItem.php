@@ -35,6 +35,7 @@ class OpsGridItem extends Model
             'link_value' => $this->link_value,
             'badge' => $this->badge,
             'sort' => $this->sort,
+            'status' => $this->status,
         ];
     }
 }

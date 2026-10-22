@@ -80,7 +80,9 @@ cd backend && php artisan test
 | `admin@demo.paopao.local` | 租户管理员 | `demo` |
 | `member@demo.paopao.local` | 成员 | `demo` |
 
-成员在用户端「社区」里写一篇，帖子进入待审。租户管理员在「帖子审核」点编辑，进入 `/posts/:id/edit` 整页表单，用 Tiptap 改标题、版块、封面和 HTML 正文，再回列表通过。通过之后，帖子才会出现在首页和社区。
+成员在用户端「社区」里写一篇，帖子进入待审。租户管理员在「帖子审核」点编辑，进入 `/posts/:id/edit` 整页表单，用 Tiptap 改标题、版块、封面和 HTML 正文，再回列表通过。封面和正文图片走 `POST /api/v1/uploads`，文件落在本机 `storage/app/public`。通过之后，帖子才会出现在首页和社区。
+
+软件在「软件审核」里新建后是待审，通过才会出现在用户端「发现」。首页 Banner 和宫格在「运营位」里维护，只有已发布的会展示。
 
 ## 鉴权说明
 

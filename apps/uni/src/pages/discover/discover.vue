@@ -85,7 +85,8 @@ onPullDownRefresh(async () => {
     </view>
     <view v-else class="list">
       <view v-for="item in visible" :key="item.id" class="soft">
-        <view class="mark">{{ item.name.slice(0, 1) }}</view>
+        <image v-if="item.icon && item.icon.startsWith('http')" class="mark-img" :src="item.icon" mode="aspectFill" />
+        <view v-else class="mark">{{ item.name.slice(0, 1) }}</view>
         <view class="body">
           <text class="name">{{ item.name }}</text>
           <text class="summary">{{ item.summary || '暂无简介' }}</text>
@@ -172,10 +173,15 @@ onPullDownRefresh(async () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.mark {
+.mark,
+.mark-img {
   width: 52px;
   height: 52px;
   border-radius: 14px;
+  flex: none;
+}
+
+.mark {
   background: #16160e;
   color: #fff;
   display: flex;
@@ -183,7 +189,6 @@ onPullDownRefresh(async () => {
   justify-content: center;
   font-size: 22px;
   font-weight: 700;
-  flex: none;
 }
 
 .body {

@@ -42,6 +42,7 @@ export interface PostItem {
 export interface SoftwareItem {
   id: number
   name: string
+  icon: string | null
   summary: string | null
   download_count: number
   category: { id: number; name: string } | null
@@ -51,11 +52,17 @@ export interface SoftwareItem {
 export interface Banner {
   id: number
   title: string | null
+  image: string
+  link_type: string
+  link_value: string | null
 }
 
 export interface GridItem {
   id: number
   title: string
+  icon: string | null
+  link_type: string
+  link_value: string | null
   badge: string | null
 }
 

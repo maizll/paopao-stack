@@ -31,7 +31,7 @@ export function localCover(id: number): string {
 
 export function noteCover(post: Pick<PostItem, 'id' | 'cover'>): string {
   const cover = post.cover || ''
-  if (!cover || /example\.com|localhost|127\.0\.0\.1/i.test(cover)) return localCover(post.id)
+  if (!cover || /example\.com/i.test(cover)) return localCover(post.id)
   return cover
 }
 

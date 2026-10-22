@@ -46,6 +46,7 @@ class OpsBanner extends Model
             'link_type' => $this->link_type,
             'link_value' => $this->link_value,
             'sort' => $this->sort,
+            'status' => $this->status,
             'start_at' => $this->start_at?->toIso8601String(),
             'end_at' => $this->end_at?->toIso8601String(),
         ];
