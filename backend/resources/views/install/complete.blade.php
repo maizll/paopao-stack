@@ -1,7 +1,7 @@
 @extends('install.layout')
 
 @section('title', '安装完成')
-@section('step_label', '第 6 步，共 6 步')
+@section('step_label', '第 6 步 · 完成')
 @section('progress', '100%')
 @section('step_class_0', 'done')
 @section('step_class_1', 'done')
@@ -32,9 +32,9 @@
         </div>
         <div class="dock">
             <div class="actions">
-                <a class="primary" href="{{ url('/api/v1/system/health') }}">查看健康检查</a>
-                <a class="link-btn ghost" href="http://127.0.0.1:43124/auth/login">管理后台登录</a>
                 <a class="link-btn ghost" href="http://127.0.0.1:43126">用户端</a>
+                <a class="link-btn ghost" href="http://127.0.0.1:43124/auth/login">管理后台登录</a>
+                <a class="primary" href="{{ url('/api/v1/system/health') }}">查看健康检查</a>
             </div>
         </div>
     </div>

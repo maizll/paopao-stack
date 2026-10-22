@@ -168,12 +168,14 @@ function hide(id) {
   el.textContent = ''
 }
 
+const stepNames = ['环境检测', '数据库', '管理员', '站点', '安装', '完成']
+
 function render(next) {
   step = next
   document.querySelectorAll('[data-panel]').forEach((panel) => {
     panel.hidden = Number(panel.dataset.panel) !== step
   })
-  document.getElementById('step-label').textContent = '第 ' + (step + 1) + ' 步，共 6 步'
+  document.getElementById('step-label').textContent = '第 ' + (step + 1) + ' 步 · ' + stepNames[step]
   document.getElementById('progress-bar').style.width = (step === 0 ? 8 : (step / 5) * 100) + '%'
   document.querySelectorAll('#step-list li').forEach((item, index) => {
     item.classList.toggle('on', index === step)
