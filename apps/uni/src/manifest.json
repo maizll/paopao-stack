@@ -2,8 +2,8 @@
     "name" : "泡泡栈",
     "appid" : "__UNI__A0B0C0D",
     "description" : "泡泡栈用户端",
-    "versionName" : "1.0.0",
-    "versionCode" : "100",
+    "versionName" : "1.0.1",
+    "versionCode" : "101",
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
