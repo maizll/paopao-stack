@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-10-27T12:40:36+08:00",
+  "captured_at": "2026-10-27T21:24:02+08:00",
   "modules": [
     "home",
     "community",
@@ -17,6 +17,5 @@
     "mine": "card"
   },
   "tabbar": "labeled",
-  "customPages": [],
-  "source": "GET /api/v1/admin/shell via 127.0.0.1:18780"
+  "note": "refreeze after restoring community forum per user 2026-10-27"
 }
