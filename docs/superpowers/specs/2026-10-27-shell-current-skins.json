@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-10-27T21:24:02+08:00",
+  "modules": [
+    "home",
+    "community",
+    "discover",
+    "mall",
+    "messages",
+    "mine"
+  ],
+  "skins": {
+    "home": "magazine",
+    "community": "forum",
+    "discover": "shelf",
+    "mall": "haosns",
+    "messages": "list",
+    "mine": "card"
+  },
+  "tabbar": "labeled",
+  "note": "refreeze after restoring community forum per user 2026-10-27"
+}
