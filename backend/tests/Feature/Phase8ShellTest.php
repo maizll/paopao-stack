@@ -21,7 +21,7 @@ class Phase8ShellTest extends TestCase
             AppShell::normalize(['modules' => []]);
             $this->fail('空页面应该拒绝。');
         } catch (ApiException $e) {
-            $this->assertSame('至少留一个页面。', $e->getMessage());
+            $this->assertSame('至少保留一个页面。', $e->getMessage());
         }
 
         try {
@@ -161,6 +161,104 @@ class Phase8ShellTest extends TestCase
             $this->fail('超限应被拒绝。');
         } catch (ApiException $e) {
             $this->assertSame('最多选择 20 个页面。', $e->getMessage());
+        }
+    }
+
+    public function test_catalog_marks_flagship_and_normalize_keeps_legacy_current_skin(): void
+    {
+        $this->assertTrue(defined(AppShell::class.'::FLAGSHIP_SKINS'));
+        $this->assertTrue(defined(AppShell::class.'::LEGACY_SKIN_MAP'));
+        $this->assertSame([
+            'home' => ['magazine', 'feed', 'haosns'],
+            'community' => ['forum', 'haosns'],
+            'discover' => ['grid', 'haosns'],
+            'mall' => ['poster', 'haosns'],
+            'messages' => ['list', 'bubble'],
+            'mine' => ['card', 'haosns'],
+        ], AppShell::FLAGSHIP_SKINS);
+        $this->assertSame([
+            'home' => ['compact' => 'magazine'],
+            'community' => ['board' => 'forum', 'compact' => 'forum'],
+            'discover' => ['shelf' => 'grid', 'list' => 'haosns'],
+            'mall' => ['card' => 'haosns', 'compact' => 'haosns'],
+            'messages' => ['compact' => 'list', 'haosns' => 'list'],
+            'mine' => ['plain' => 'card', 'grid' => 'card'],
+        ], AppShell::LEGACY_SKIN_MAP);
+
+        $catalog = AppShell::catalog();
+        $home = collect($catalog['modules'])->firstWhere('id', 'home');
+        $homeIds = array_column($home['skins'], 'id');
+        $this->assertContains('feed', $homeIds);
+        $feed = $home['skins'][array_search('feed', $homeIds, true)];
+        $this->assertTrue($feed['flagship']);
+        $this->assertSame('/admin/shell-thumbs/home-feed.png', $feed['thumb']);
+        $this->assertNotSame('', trim((string) $feed['blurb']));
+
+        foreach (AppShell::SKINS as $moduleId => $known) {
+            $module = collect($catalog['modules'])->firstWhere('id', $moduleId);
+            $this->assertNotNull($module);
+            $this->assertSame(array_keys($known), array_column($module['skins'], 'id'));
+            foreach ($module['skins'] as $skin) {
+                $this->assertIsBool($skin['flagship']);
+                $this->assertSame(
+                    in_array($skin['id'], AppShell::FLAGSHIP_SKINS[$moduleId], true),
+                    $skin['flagship'],
+                );
+                $this->assertSame(
+                    '/admin/shell-thumbs/'.$moduleId.'-'.$skin['id'].'.png',
+                    $skin['thumb'],
+                );
+                $this->assertIsString($skin['blurb']);
+                $this->assertNotSame('', trim($skin['blurb']));
+                $this->assertStringNotContainsString('更紧', $skin['blurb']);
+            }
+        }
+
+        $discover = collect($catalog['modules'])->firstWhere('id', 'discover');
+        $discoverIds = array_column($discover['skins'], 'id');
+        $shelf = $discover['skins'][array_search('shelf', $discoverIds, true)];
+        $this->assertFalse($shelf['flagship']);
+        $this->assertSame('grid', AppShell::LEGACY_SKIN_MAP['discover']['shelf']);
+
+        $saved = AppShell::normalize([
+            'modules' => ['home', 'mine'],
+            'skins' => ['home' => 'compact', 'mine' => 'plain'],
+            'tabbar' => 'labeled',
+        ]);
+        $this->assertSame('compact', $saved['skins']['home']);
+        $this->assertSame('plain', $saved['skins']['mine']);
+
+        $live = AppShell::normalize([
+            'modules' => ['home', 'community', 'discover', 'mall', 'messages', 'mine'],
+            'skins' => [
+                'home' => 'magazine',
+                'community' => 'forum',
+                'discover' => 'shelf',
+                'mall' => 'haosns',
+                'messages' => 'list',
+                'mine' => 'card',
+            ],
+            'tabbar' => 'labeled',
+        ]);
+        $this->assertSame('magazine', $live['skins']['home']);
+        $this->assertSame('forum', $live['skins']['community']);
+        $this->assertSame('shelf', $live['skins']['discover']);
+        $this->assertSame('haosns', $live['skins']['mall']);
+        $this->assertSame('list', $live['skins']['messages']);
+        $this->assertSame('card', $live['skins']['mine']);
+        $this->assertSame('labeled', $live['tabbar']);
+
+        foreach (AppShell::LEGACY_SKIN_MAP as $moduleId => $map) {
+            foreach ($map as $legacyId => $suggested) {
+                $this->assertNotSame($legacyId, $suggested);
+                $this->assertArrayHasKey($legacyId, AppShell::SKINS[$moduleId]);
+                $normalized = AppShell::normalize([
+                    'modules' => [$moduleId],
+                    'skins' => [$moduleId => $legacyId],
+                    'tabbar' => 'labeled',
+                ]);
+                $this->assertSame($legacyId, $normalized['skins'][$moduleId]);
+            }
         }
     }
 }
