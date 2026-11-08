@@ -38,6 +38,79 @@ final class AppShell
     ];
 
     /**
+     * 旗舰展示清单（UI 主推）。遗留 id 仍留在 SKINS 里，当前租户继续可用。
+     *
+     * @var array<string, list<string>>
+     */
+    public const FLAGSHIP_SKINS = [
+        'home' => ['magazine', 'feed', 'haosns'],
+        'community' => ['forum', 'haosns'],
+        'discover' => ['grid', 'haosns'],
+        'mall' => ['poster', 'haosns'],
+        'messages' => ['list', 'bubble'],
+        'mine' => ['card', 'haosns'],
+    ];
+
+    /**
+     * 仅用于新建默认，或用户主动放弃遗留皮肤之后的建议映射。
+     * normalize() 与 current() 读路径禁止套用。
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const LEGACY_SKIN_MAP = [
+        'home' => ['compact' => 'magazine'],
+        'community' => ['board' => 'forum', 'compact' => 'forum'],
+        'discover' => ['shelf' => 'grid', 'list' => 'haosns'],
+        'mall' => ['card' => 'haosns', 'compact' => 'haosns'],
+        'messages' => ['compact' => 'list', 'haosns' => 'list'],
+        'mine' => ['plain' => 'card', 'grid' => 'card'],
+    ];
+
+    /**
+     * 产品定位。禁止写成「标题更紧」这类换皮句。
+     *
+     * @var array<string, array<string, string>>
+     */
+    private const SKIN_BLURBS = [
+        'home' => [
+            'feed' => '全屏视频舞台，作者和互动贴在画面上。',
+            'compact' => '单列信息流，封面跟在正文下面。',
+            'magazine' => '关注、推荐、最新和搜索，双列封面瀑布。',
+            'haosns' => '单列社区动态，头像、封面和互动在同一张卡。',
+        ],
+        'community' => [
+            'board' => '按版块进帖，一个版一块地盘。',
+            'compact' => '高密度帖子行，适合快速扫版。',
+            'forum' => '论坛信息卡，话题按楼层往下读。',
+            'haosns' => '圈子发现流，搜索、关注和横滑版块。',
+        ],
+        'discover' => [
+            'shelf' => '货架陈列，分类横滑后再点进应用。',
+            'grid' => '真三列宫格，图标和名称都露出来。',
+            'list' => '搜索结果长列表，一行一条。',
+            'haosns' => '搜索发现，热词和内容卡混在一列。',
+        ],
+        'mall' => [
+            'card' => '商品卡同时给出封面、说明和价格。',
+            'compact' => '价签列表，一行看完入口和价格。',
+            'poster' => '每件商品一张通栏大图，价格跟在图下。',
+            'haosns' => '右图商品卡，标题和价格排在左侧。',
+        ],
+        'messages' => [
+            'list' => '通知入口加上私信会话列表。',
+            'compact' => '高密度通知行，一屏扫完未读。',
+            'bubble' => '左右气泡的真实会话。',
+            'haosns' => '消息做成动态卡，头像和正文在一起。',
+        ],
+        'mine' => [
+            'plain' => '浅色头图的个人主页。',
+            'card' => '头图加上双列笔记封面。',
+            'grid' => '三列快捷入口的个人中心。',
+            'haosns' => '头图、成就标和动态贴在一起。',
+        ],
+    ];
+
+    /**
      * @var array<string, string>
      */
     public const TABBARS = [
@@ -125,15 +198,22 @@ final class AppShell
     }
 
     /**
-     * @return array{modules: list<array{id: string, label: string, path: string, summary: string, skins: list<array{id: string, label: string}>}>, tabbars: list<array{id: string, label: string}>}
+     * @return array{modules: list<array{id: string, label: string, path: string, summary: string, skins: list<array{id: string, label: string, flagship: bool, thumb: string, blurb: string}>}>, tabbars: list<array{id: string, label: string}>}
      */
     public static function catalog(): array
     {
         $modules = [];
         foreach (self::MODULES as $id => $meta) {
+            $flagship = array_fill_keys(self::FLAGSHIP_SKINS[$id], true);
             $skins = [];
             foreach (self::SKINS[$id] as $skin => $label) {
-                $skins[] = ['id' => $skin, 'label' => $label];
+                $skins[] = [
+                    'id' => $skin,
+                    'label' => $label,
+                    'flagship' => isset($flagship[$skin]),
+                    'thumb' => '/admin/shell-thumbs/'.$id.'-'.$skin.'.png',
+                    'blurb' => self::SKIN_BLURBS[$id][$skin],
+                ];
             }
             $modules[] = [
                 'id' => $id,
@@ -180,6 +260,7 @@ final class AppShell
         $skins = [];
         foreach ($ordered as $id) {
             $fallback = $id === 'community' ? 'haosns' : array_key_first(self::SKINS[$id]);
+            // 已存 skin 原样保留。LEGACY_SKIN_MAP 只建议新建或用户放弃遗留后的默认，这里禁止套用。
             $skin = $skinsIn[$id] ?? $fallback;
             if (! is_string($skin) || ! isset(self::SKINS[$id][$skin])) {
                 throw new ApiException(ApiCode::BUSINESS, self::MODULES[$id]['label'].'样式不存在。', 422);
@@ -288,6 +369,7 @@ final class AppShell
                         'path' => $custom['path'],
                     ]] : [];
                 }
+
                 continue;
             }
             $normalized = [];
