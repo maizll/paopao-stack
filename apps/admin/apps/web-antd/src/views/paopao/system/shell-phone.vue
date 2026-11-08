@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 type Audience = 'guest' | 'member';
 
@@ -98,7 +98,26 @@ const emit = defineEmits<{
   select: [];
 }>();
 
-const broken = ref<Record<string, boolean>>({});
+const FALLBACK_COVERS = [
+  '/admin/shell-thumbs/fallback-1.jpg',
+  '/admin/shell-thumbs/fallback-2.jpg',
+  '/admin/shell-thumbs/fallback-3.jpg',
+  '/admin/shell-thumbs/fallback-4.jpg',
+];
+
+const hubShortcuts = ['订单', '软件', '设置', '收藏', '草稿', '客服'];
+
+function coverOf(src: string | null | undefined, index: number): string {
+  if ((src && /^(https?:)?\/\//i.test(src)) || (src && src.startsWith('/'))) return src;
+  return FALLBACK_COVERS[index % FALLBACK_COVERS.length] ?? FALLBACK_COVERS[0];
+}
+
+function onCoverError(event: Event, index: number) {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement) || img.dataset.fb === '1') return;
+  img.dataset.fb = '1';
+  img.src = FALLBACK_COVERS[index % FALLBACK_COVERS.length] ?? FALLBACK_COVERS[0];
+}
 
 const pageLabel = computed(() => {
   const found = props.modules.find((item) => item.id === props.pageId);
@@ -130,14 +149,6 @@ const homePosts = computed(() => props.data.posts.slice(0, 6));
 const profile = computed(() => (props.audience === 'guest' ? null : props.data.me));
 const showTitle = computed(() => !['community', 'home', 'login', 'mine'].includes(props.pageId));
 
-function show(key: string, src: null | string | undefined) {
-  return !!src && !broken.value[key];
-}
-
-function hide(key: string) {
-  broken.value = { ...broken.value, [key]: true };
-}
-
 function initial(value: string) {
   const text = value.trim();
   return text ? text.slice(0, 1) : '泡';
@@ -163,56 +174,112 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
           <p v-if="data.loading" class="empty">正在读取这个租户的内容</p>
 
           <template v-else-if="pageId === 'home'">
-            <div v-if="skin === 'feed'" class="imm">
-              <div class="imm-tabs">
+            <div v-if="skin === 'feed'" class="stage">
+              <img
+                class="stage-frame"
+                alt=""
+                :src="coverOf(homePosts[0]?.cover, 0)"
+                @error="onCoverError($event, 0)"
+              />
+              <div class="stage-scrim">
+                <div class="stage-tabs">
+                  <span>关注</span>
+                  <span class="on">推荐</span>
+                  <span>直播</span>
+                </div>
+                <i class="stage-play" aria-hidden="true" />
+                <p v-if="!homePosts.length" class="stage-empty">还没有作品</p>
+                <div v-else class="stage-foot">
+                  <div class="stage-author">
+                    <i>{{ initial(homePosts[0].author) }}</i>
+                    <b>@{{ homePosts[0].author || '匿名' }}</b>
+                    <span>关注</span>
+                  </div>
+                  <strong>{{ homePosts[0].title }}</strong>
+                  <div class="stage-side">
+                    <span>赞 {{ homePosts[0].likes }}</span>
+                    <span>评 {{ homePosts[0].comments }}</span>
+                    <span>藏 {{ homePosts[0].favorites }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="skin === 'compact'" class="stream">
+              <header class="stream-top">
+                <b>关注</b>
+                <span>只看已关注的人</span>
+              </header>
+              <p v-if="!homePosts.length" class="empty">还没有笔记</p>
+              <article v-for="(post, index) in homePosts.slice(0, 3)" :key="post.id" class="stream-card">
+                <p class="stream-title">{{ post.title }}</p>
+                <p v-if="post.excerpt" class="stream-excerpt">{{ post.excerpt }}</p>
+                <img
+                  class="stream-cover"
+                  :alt="post.title"
+                  :src="coverOf(post.cover, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <p class="stream-meta">{{ post.author || '匿名' }} · {{ post.views }} 浏览</p>
+              </article>
+            </div>
+            <div v-else-if="skin === 'haosns'" class="sns-home">
+              <p v-if="!homePosts.length" class="empty">还没有动态</p>
+              <article v-for="(post, index) in homePosts.slice(0, 2)" :key="post.id" class="sns-card">
+                <div class="sns-who">
+                  <em>{{ initial(post.author) }}</em>
+                  <b>{{ post.author }}</b>
+                  <i>成员</i>
+                </div>
+                <p class="sns-title">{{ post.title }}</p>
+                <img
+                  class="sns-photo sns-photo-lg"
+                  :alt="post.title"
+                  :src="coverOf(post.cover, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <div class="sns-acts">
+                  <span>赞 {{ post.likes }}</span>
+                  <span>评 {{ post.comments }}</span>
+                  <span>转</span>
+                  <span>藏 {{ post.favorites }}</span>
+                </div>
+              </article>
+            </div>
+            <template v-else>
+              <div class="mini-tabs">
                 <span>关注</span>
                 <span class="on">推荐</span>
                 <span>最新</span>
               </div>
-              <p v-if="!homePosts.length" class="imm-empty">还没有作品</p>
-              <div v-else class="imm-foot">
-                <div class="imm-row">
-                  <i>{{ initial(homePosts[0].author) }}</i>
-                  <div>
-                    <b>@{{ homePosts[0].author || '匿名' }}</b>
-                    <em>刚刚</em>
-                  </div>
-                  <span>关注</span>
-                </div>
-                <strong>{{ homePosts[0].title }}</strong>
-                <p class="imm-search">相关搜索</p>
-                <div class="imm-acts">
-                  <span>赞</span>
-                  <span>分享</span>
-                  <span>收藏</span>
-                  <span>评论</span>
-                </div>
-                <p class="imm-say">说点什么，友善发言</p>
-              </div>
-            </div>
-            <template v-else>
-            <div class="mini-tabs">
-              <span>关注</span>
-              <span class="on">推荐</span>
-              <span>最新</span>
-            </div>
-            <p v-if="!homePosts.length" class="empty">还没有笔记</p>
-            <div v-else-if="skin === 'compact'" class="notes">
-              <article v-for="post in homePosts.slice(0, 4)" :key="post.id" class="note">
-                <img
-                  v-if="show(`post-${post.id}`, post.cover)"
-                  :alt="post.title"
-                  :src="post.cover || ''"
-                  @error="hide(`post-${post.id}`)"
-                />
-                <div>
+              <p v-if="!homePosts.length" class="empty">还没有笔记</p>
+              <div v-else class="waterfall">
+                <article v-for="(post, index) in homePosts.slice(0, 4)" :key="post.id" class="fall">
+                  <img
+                    :alt="post.title"
+                    :src="coverOf(post.cover, index)"
+                    @error="onCoverError($event, index)"
+                  />
                   <b>{{ post.title }}</b>
                   <span>{{ post.author }}</span>
-                </div>
-              </article>
-            </div>
-            <div v-else-if="skin === 'haosns'" class="sns-home">
-              <article v-for="post in homePosts.slice(0, 2)" :key="post.id" class="sns-card">
+                </article>
+              </div>
+            </template>
+          </template>
+
+          <template v-else-if="pageId === 'community'">
+            <template v-if="skin === 'forum'">
+              <div class="sns-plain">社区</div>
+              <div class="sns-chips">
+                <span class="on">全部</span>
+                <span v-for="board in data.boards.slice(0, 4)" :key="board.id">{{ board.name }}</span>
+              </div>
+              <p v-if="!data.posts.length" class="empty">还没有帖子</p>
+              <article
+                v-for="(post, index) in data.posts.slice(0, 2)"
+                v-else
+                :key="post.id"
+                class="sns-card long"
+              >
                 <div class="sns-who">
                   <em>{{ initial(post.author) }}</em>
                   <b>{{ post.author }}</b>
@@ -221,170 +288,274 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
                 <p class="sns-title">{{ post.title }}</p>
                 <p v-if="post.excerpt" class="sns-excerpt">{{ post.excerpt }}</p>
                 <img
-                  v-if="show(`post-${post.id}`, post.cover)"
                   class="sns-photo"
                   :alt="post.title"
-                  :src="post.cover || ''"
-                  @error="hide(`post-${post.id}`)"
+                  :src="coverOf(post.cover, index)"
+                  @error="onCoverError($event, index)"
                 />
                 <div class="sns-foot">
                   <span>{{ post.views }} 浏览</span>
-                  <span>赞 {{ post.likes }}</span>
+                  <span>赞 {{ post.likes }} · 藏 {{ post.favorites }} · 评 {{ post.comments }}</span>
                 </div>
               </article>
-            </div>
-            <div v-else class="waterfall">
-              <article v-for="post in homePosts.slice(0, 4)" :key="post.id" class="fall">
-                <img
-                  v-if="show(`post-${post.id}`, post.cover)"
-                  :alt="post.title"
-                  :src="post.cover || ''"
-                  @error="hide(`post-${post.id}`)"
-                />
-                <b>{{ post.title }}</b>
-                <span>{{ post.author }}</span>
-              </article>
-            </div>
             </template>
-          </template>
-
-          <template v-else-if="pageId === 'community'">
-            <template v-if="skin === 'haosns'">
-              <div class="sns-search"><i /><span>搜索</span></div>
+            <div v-else-if="skin === 'haosns'" class="circle-discover">
+              <div class="sns-search"><i /><span>搜索圈子</span></div>
               <div class="sns-tabs">
                 <span>关注</span>
                 <span class="on">发现</span>
                 <span>附近</span>
               </div>
-            </template>
-            <div v-else class="sns-plain">社区</div>
-            <div class="sns-chips">
-              <span class="on">全部</span>
-              <span v-for="board in data.boards.slice(0, 4)" :key="board.id">{{ board.name }}</span>
+              <div class="circle-rail">
+                <article v-for="(board, index) in data.boards.slice(0, 4)" :key="board.id" class="circle-tile">
+                  <img
+                    :alt="board.name"
+                    :src="coverOf(null, index)"
+                    @error="onCoverError($event, index)"
+                  />
+                  <b>{{ board.name }}</b>
+                </article>
+              </div>
+              <p v-if="!data.posts.length" class="empty">还没有圈子动态</p>
+              <article v-for="(post, index) in data.posts.slice(0, 2)" :key="post.id" class="circle-post">
+                <img
+                  :alt="post.title"
+                  :src="coverOf(post.cover, index + 1)"
+                  @error="onCoverError($event, index + 1)"
+                />
+                <div>
+                  <b>{{ post.board || '圈子' }}</b>
+                  <span>{{ post.title }}</span>
+                  <i>加入</i>
+                </div>
+              </article>
             </div>
-            <p v-if="!data.posts.length" class="empty">还没有帖子</p>
-            <article
-              v-for="post in data.posts.slice(0, skin === 'forum' ? 2 : 3)"
-              v-else
-              :key="post.id"
-              class="sns-card"
-              :class="{ tight: skin === 'compact', long: skin === 'forum' }"
-            >
-              <div class="sns-who">
-                <em>{{ initial(post.author) }}</em>
-                <b>{{ post.author }}</b>
-                <i>成员</i>
-              </div>
-              <p class="sns-title">{{ post.title }}</p>
-              <p v-if="post.excerpt" class="sns-excerpt">{{ post.excerpt }}</p>
-              <img
-                v-if="show(`post-${post.id}`, post.cover)"
-                class="sns-photo"
-                :alt="post.title"
-                :src="post.cover || ''"
-                @error="hide(`post-${post.id}`)"
-              />
-              <div class="sns-foot">
-                <span>{{ post.views }} 浏览</span>
-                <span>赞 {{ post.likes }} · 藏 {{ post.favorites }} · 评 {{ post.comments }}</span>
-              </div>
-            </article>
+            <div v-else-if="skin === 'board'" class="board-dir">
+              <header class="board-head">
+                <b>版块</b>
+                <span>按地盘进帖</span>
+              </header>
+              <p v-if="!data.boards.length" class="empty">还没有版块</p>
+              <article v-for="(board, index) in data.boards.slice(0, 4)" :key="board.id" class="board-tile">
+                <img
+                  :alt="board.name"
+                  :src="coverOf(null, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <div>
+                  <b>{{ board.name }}</b>
+                  <p>{{ board.description || '进入这个版块看帖' }}</p>
+                  <span>{{ board.posts }} 帖</span>
+                </div>
+              </article>
+            </div>
+            <div v-else class="scan">
+              <header class="board-head">
+                <b>最新</b>
+                <span>快速扫版</span>
+              </header>
+              <p v-if="!data.posts.length" class="empty">还没有帖子</p>
+              <article v-for="(post, index) in data.posts.slice(0, 6)" :key="post.id" class="scan-row">
+                <img
+                  :alt="post.title"
+                  :src="coverOf(post.cover, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <b>{{ post.title }}</b>
+                <span>{{ post.comments }}</span>
+              </article>
+            </div>
           </template>
 
           <template v-else-if="pageId === 'discover'">
-            <div v-if="data.chips.length" class="chips">
-              <span v-for="chip in data.chips.slice(0, 4)" :key="chip.id">{{ chip.title }}</span>
-            </div>
-            <p v-if="!data.apps.length" class="empty">还没有上架的软件</p>
-            <div v-else class="apps" :class="`is-${skin}`">
-              <article v-for="app in data.apps.slice(0, skin === 'grid' ? 4 : 5)" :key="app.id" class="app">
+            <template v-if="skin === 'shelf'">
+              <div v-if="data.chips.length" class="chips">
+                <span v-for="chip in data.chips.slice(0, 4)" :key="chip.id">{{ chip.title }}</span>
+              </div>
+              <p v-if="!data.apps.length" class="empty">还没有上架的软件</p>
+              <div v-else class="apps is-shelf">
+                <article v-for="(app, index) in data.apps.slice(0, 5)" :key="app.id" class="app">
+                  <img
+                    :alt="app.name"
+                    :src="coverOf(app.icon, index)"
+                    @error="onCoverError($event, index)"
+                  />
+                  <div>
+                    <b>{{ app.name }}</b>
+                    <span>{{ app.summary || '暂无简介' }}</span>
+                  </div>
+                  <i>获取</i>
+                </article>
+              </div>
+            </template>
+            <div v-else-if="skin === 'grid'" class="discover-grid">
+              <p v-if="!data.apps.length" class="empty">还没有上架的软件</p>
+              <article v-for="(app, index) in data.apps.slice(0, 6)" :key="app.id">
                 <img
-                  v-if="show(`app-${app.id}`, app.icon)"
                   :alt="app.name"
-                  :src="app.icon || ''"
-                  @error="hide(`app-${app.id}`)"
+                  :src="coverOf(app.icon, index)"
+                  @error="onCoverError($event, index)"
                 />
-                <em v-else>{{ initial(app.name) }}</em>
-                <div>
-                  <b>{{ app.name }}</b>
-                  <span v-if="skin !== 'list'">{{ app.summary || '暂无简介' }}</span>
-                  <small v-else>{{ app.downloads }} 次获取</small>
-                </div>
-                <i v-if="skin === 'shelf'">获取</i>
+                <b>{{ app.name }}</b>
+                <span>{{ app.summary || '暂无简介' }}</span>
+              </article>
+            </div>
+            <div v-else-if="skin === 'list'" class="find-list">
+              <div class="sns-search"><i /><span>搜索应用</span></div>
+              <p v-if="!data.apps.length" class="empty">没有匹配的应用</p>
+              <article v-for="(app, index) in data.apps.slice(0, 6)" :key="app.id" class="find-row">
+                <img
+                  :alt="app.name"
+                  :src="coverOf(app.icon, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <b>{{ app.name }}</b>
+                <small>{{ app.downloads }} 次</small>
+              </article>
+            </div>
+            <div v-else class="mix-discover">
+              <div class="sns-search"><i /><span>搜索发现</span></div>
+              <div v-if="data.chips.length" class="hot-words">
+                <span v-for="chip in data.chips.slice(0, 4)" :key="chip.id">{{ chip.title }}</span>
+              </div>
+              <p v-if="!data.apps.length" class="empty">还没有可发现的内容</p>
+              <article v-for="(app, index) in data.apps.slice(0, 2)" :key="app.id" class="mix-card">
+                <img
+                  :alt="app.name"
+                  :src="coverOf(app.icon, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <b>{{ app.name }}</b>
+                <p>{{ app.summary || '热门内容' }}</p>
               </article>
             </div>
           </template>
 
           <template v-else-if="pageId === 'mall'">
             <p v-if="!data.products.length" class="empty">还没有商品</p>
-            <template v-else-if="skin === 'poster'">
-              <article class="poster">
+            <div v-else-if="skin === 'poster'" class="poster-stack">
+              <article v-for="(item, index) in data.products.slice(0, 2)" :key="item.id" class="poster">
                 <img
-                  v-if="show(`sku-${data.products[0].id}`, data.products[0].cover)"
-                  :alt="data.products[0].title"
-                  :src="data.products[0].cover || ''"
-                  @error="hide(`sku-${data.products[0].id}`)"
+                  :alt="item.title"
+                  :src="coverOf(item.cover, index)"
+                  @error="onCoverError($event, index)"
                 />
-                <b>{{ data.products[0].title }}</b>
-                <span>{{ data.products[0].summary || '卡密自动发货' }}</span>
-                <strong>¥{{ data.products[0].price }}</strong>
-              </article>
-              <article v-for="item in data.products.slice(1, 4)" :key="item.id" class="sku line">
                 <b>{{ item.title }}</b>
+                <span>{{ item.summary || '卡密自动发货' }}</span>
                 <strong>¥{{ item.price }}</strong>
               </article>
-            </template>
+            </div>
             <div v-else-if="skin === 'haosns'" class="sns-mall">
-              <article v-for="item in data.products.slice(0, 2)" :key="item.id" class="sns-good">
+              <article v-for="(item, index) in data.products.slice(0, 2)" :key="item.id" class="sns-good">
                 <img
-                  v-if="show(`sku-${item.id}`, item.cover)"
                   :alt="item.title"
-                  :src="item.cover || ''"
-                  @error="hide(`sku-${item.id}`)"
+                  :src="coverOf(item.cover, index)"
+                  @error="onCoverError($event, index)"
                 />
-                <em v-else>{{ initial(item.title) }}</em>
                 <b>{{ item.title }}</b>
                 <strong>¥{{ item.price }}</strong>
               </article>
             </div>
-            <div v-else class="skus" :class="{ tight: skin === 'compact' }">
-              <article v-for="item in data.products.slice(0, 5)" :key="item.id" class="sku">
+            <div v-else-if="skin === 'card'" class="sku-cards">
+              <article v-for="(item, index) in data.products.slice(0, 4)" :key="item.id">
                 <img
-                  v-if="show(`sku-${item.id}`, item.cover)"
                   :alt="item.title"
-                  :src="item.cover || ''"
-                  @error="hide(`sku-${item.id}`)"
+                  :src="coverOf(item.cover, index)"
+                  @error="onCoverError($event, index)"
                 />
-                <em v-else>{{ initial(item.title) }}</em>
-                <div>
-                  <b>{{ item.title }}</b>
-                  <span v-if="skin !== 'compact'">{{ item.summary || '卡密自动发货' }}</span>
-                </div>
+                <b>{{ item.title }}</b>
+                <span>{{ item.summary || '卡密自动发货' }}</span>
+                <strong>¥{{ item.price }}</strong>
+              </article>
+            </div>
+            <div v-else class="price-rows">
+              <article v-for="(item, index) in data.products.slice(0, 6)" :key="item.id">
+                <img
+                  :alt="item.title"
+                  :src="coverOf(item.cover, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <b>{{ item.title }}</b>
                 <strong>¥{{ item.price }}</strong>
               </article>
             </div>
           </template>
 
           <template v-else-if="pageId === 'messages'">
-            <div class="inbox" :class="{ pills: skin === 'bubble', sns: skin === 'haosns' }">
-              <span>赞和收藏</span>
-              <span>关注</span>
-              <span>评论</span>
-              <span>系统</span>
-            </div>
-            <p v-if="!data.messages.length" class="empty">还没有消息</p>
-            <div v-else class="msgs" :class="{ bubbles: skin === 'bubble', sns: skin === 'haosns' }">
-              <article
-                v-for="(item, index) in data.messages.slice(0, 5)"
+            <template v-if="skin === 'list'">
+              <div class="inbox">
+                <span>赞和收藏</span>
+                <span>关注</span>
+                <span>评论</span>
+                <span>系统</span>
+              </div>
+              <p v-if="!data.messages.length" class="empty">还没有消息</p>
+              <div v-else class="msgs">
+                <article v-for="item in data.messages.slice(0, 5)" :key="item.id" class="msg">
+                  <em>{{ initial(item.title) }}</em>
+                  <div>
+                    <b>{{ item.title }}</b>
+                    <span>{{ item.body }}</span>
+                  </div>
+                </article>
+              </div>
+            </template>
+            <div v-else-if="skin === 'bubble'" class="chat">
+              <header class="chat-bar">
+                <b>会话</b>
+                <span>在线</span>
+              </header>
+              <p v-if="!data.messages.length" class="empty">还没有消息</p>
+              <div
+                v-for="(item, index) in data.messages.slice(0, 4)"
                 :key="item.id"
-                class="msg"
-                :class="{ self: skin === 'bubble' && index % 2 === 1 }"
+                class="chat-line"
+                :class="{ mine: index % 2 === 1 }"
               >
-                <em v-if="skin !== 'bubble'">{{ initial(item.title) }}</em>
+                <img
+                  v-if="index % 2 === 0"
+                  class="chat-ava"
+                  alt=""
+                  :src="coverOf(null, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <div class="chat-bubble">
+                  <p>{{ item.body || item.title }}</p>
+                </div>
+              </div>
+              <div class="chat-input">说点什么</div>
+            </div>
+            <div v-else-if="skin === 'compact'" class="note-rows">
+              <p v-if="!data.messages.length" class="empty">还没有消息</p>
+              <article v-for="(item, index) in data.messages.slice(0, 7)" :key="item.id">
+                <img
+                  alt=""
+                  :src="coverOf(null, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <b>{{ item.title }}</b>
+                <i />
+              </article>
+            </div>
+            <div v-else class="act-list">
+              <p v-if="!data.messages.length" class="empty">还没有消息</p>
+              <article v-for="(item, index) in data.messages.slice(0, 3)" :key="item.id" class="act-card">
+                <img
+                  class="act-ava"
+                  alt=""
+                  :src="coverOf(null, index)"
+                  @error="onCoverError($event, index)"
+                />
                 <div>
                   <b>{{ item.title }}</b>
-                  <span v-if="skin !== 'compact'">{{ item.body }}</span>
+                  <p>{{ item.body }}</p>
                 </div>
+                <img
+                  class="act-cover"
+                  alt=""
+                  :src="coverOf(null, index + 1)"
+                  @error="onCoverError($event, index + 1)"
+                />
               </article>
             </div>
           </template>
@@ -409,16 +580,75 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
               <b>{{ profile ? profile.nickname : '点击登录' }}</b>
               <i v-if="profile">成员</i>
             </div>
-            <div class="sns-stats">
-              <span><b>{{ profile ? profile.following : '-' }}</b>关注</span>
-              <span><b>{{ profile ? profile.followers : '-' }}</b>粉丝</span>
-              <span><b>{{ profile ? profile.likes : '-' }}</b>获赞</span>
+            <div class="badge-row">
+              <span>笔记 {{ profile ? profile.posts : 0 }}</span>
+              <span>获赞 {{ profile ? profile.likes : 0 }}</span>
+              <span>粉丝 {{ profile ? profile.followers : 0 }}</span>
             </div>
-            <div class="sns-tabs mine-tabs"><span class="on">动态</span><span>收藏</span></div>
-            <article v-if="data.posts[0]" class="sns-card">
-              <p class="sns-title">{{ data.posts[0].title }}</p>
-              <p v-if="data.posts[0].excerpt" class="sns-excerpt">{{ data.posts[0].excerpt }}</p>
+            <article v-if="data.posts[0]" class="achieve-note">
+              <img
+                :alt="data.posts[0].title"
+                :src="coverOf(data.posts[0].cover, 0)"
+                @error="onCoverError($event, 0)"
+              />
+              <div>
+                <b>{{ data.posts[0].title }}</b>
+                <span>{{ data.posts[0].excerpt || '刚刚发布' }}</span>
+              </div>
             </article>
+            <p v-else class="empty">还没有动态</p>
+          </template>
+
+          <template v-else-if="pageId === 'mine' && skin === 'plain'">
+            <div class="plain-mine">
+              <div class="plain-hero">
+                <img
+                  class="plain-banner"
+                  alt=""
+                  :src="coverOf(homePosts[0]?.cover, 1)"
+                  @error="onCoverError($event, 1)"
+                />
+                <em>{{ profile ? initial(profile.nickname) : '我' }}</em>
+              </div>
+              <b class="plain-name">{{ profile ? profile.nickname : '点击登录' }}</b>
+              <p class="plain-bio">{{ profile ? '把简介写在头图下面' : '登录后查看主页' }}</p>
+              <article v-for="(post, index) in (profile ? homePosts.slice(0, 3) : [])" :key="post.id" class="plain-row">
+                <img
+                  :alt="post.title"
+                  :src="coverOf(post.cover, index)"
+                  @error="onCoverError($event, index)"
+                />
+                <div>
+                  <b>{{ post.title }}</b>
+                  <span>{{ post.author }}</span>
+                </div>
+              </article>
+              <p v-if="!profile || !homePosts.length" class="empty">
+                {{ profile ? '还没有笔记' : '登录后可以看笔记、发帖和抽奖。' }}
+              </p>
+            </div>
+          </template>
+
+          <template v-else-if="pageId === 'mine' && skin === 'grid'">
+            <div class="hub">
+              <div class="hub-id">
+                <em>{{ profile ? initial(profile.nickname) : '我' }}</em>
+                <div>
+                  <b>{{ profile ? profile.nickname : '点击登录' }}</b>
+                  <span>{{ profile ? `${profile.posts} 笔记 · ${profile.followers} 粉丝` : '登录后使用快捷入口' }}</span>
+                </div>
+              </div>
+              <div class="hub-grid">
+                <article v-for="(item, index) in hubShortcuts" :key="item">
+                  <img
+                    alt=""
+                    :src="coverOf(null, index)"
+                    @error="onCoverError($event, index)"
+                  />
+                  <span>{{ item }}</span>
+                </article>
+              </div>
+            </div>
           </template>
 
           <template v-else>
@@ -436,7 +666,7 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
                 <p><b>{{ profile ? profile.likes : '-' }}</b><span>获赞与收藏</span></p>
               </div>
               <p class="xhs-bio">{{ profile ? '点击这里，填写简介' : '发笔记、抽奖和收藏' }}</p>
-              <div class="xhs-chips" :class="{ wrap: skin === 'grid' }">
+              <div class="xhs-chips">
                 <span>订单</span>
                 <span>软件</span>
                 <span>设置</span>
@@ -450,7 +680,12 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
                 <span v-if="profile">收藏</span>
               </div>
               <div v-if="profile && homePosts.length" class="xhs-falls">
-                <article v-for="post in homePosts.slice(0, 2)" :key="post.id">
+                <article v-for="(post, index) in homePosts.slice(0, 2)" :key="post.id">
+                  <img
+                    :alt="post.title"
+                    :src="coverOf(post.cover, index)"
+                    @error="onCoverError($event, index)"
+                  />
                   <b>{{ post.title }}</b>
                   <span>{{ post.author }}</span>
                 </article>
@@ -557,24 +792,123 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
   background: #16160e;
 }
 .body { flex: 1; min-height: 0; overflow: hidden; padding: 2px 12px 8px; }
-.body.page-home.skin-feed { padding: 0; background: #111; }
-.imm { position: relative; height: 100%; min-height: 280px; background: linear-gradient(180deg, #4a4a4a 0%, #1a1a1a 46%, #000 100%); color: #fff; }
-.imm-tabs { display: flex; justify-content: center; gap: 14px; padding-top: 6px; color: rgba(255, 255, 255, 0.72); font-size: 12px; }
-.imm-tabs .on { color: #fff; font-weight: 700; }
-.imm-empty { margin-top: 80px; color: #fff; text-align: center; }
-.imm-foot { position: absolute; left: 10px; right: 10px; bottom: 8px; }
-.imm-row { display: flex; align-items: center; gap: 6px; }
-.imm-row i { width: 22px; height: 22px; flex: none; border-radius: 50%; background: #fff; color: #ff2442; font-style: normal; font-size: 10px; font-weight: 700; line-height: 22px; text-align: center; }
-.imm-row div { flex: 1; min-width: 0; }
-.imm-row b, .imm-row em, .imm-foot strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.imm-row b { font-size: 11px; font-weight: 700; }
-.imm-row em { color: rgba(255, 255, 255, 0.62); font-size: 9px; font-style: normal; }
-.imm-row > span { flex: none; height: 16px; padding: 0 6px; border-radius: 8px; background: #ff2442; font-size: 10px; line-height: 16px; }
-.imm-foot strong { margin-top: 6px; font-size: 11px; font-weight: 500; }
-.imm-search, .imm-say { height: 16px; margin: 6px 0 0; border-radius: 8px; background: rgba(68, 68, 70, 0.72); color: rgba(255, 255, 255, 0.8); font-size: 9px; line-height: 16px; }
-.imm-search { display: inline-block; padding: 0 8px; }
-.imm-say { padding: 0 8px; color: rgba(255, 255, 255, 0.55); }
-.imm-acts { display: flex; justify-content: space-around; margin-top: 6px; font-size: 9px; }
+.body.page-home.skin-feed { padding: 0; background: #2a2420; }
+.stage { position: relative; height: 100%; min-height: 280px; overflow: hidden; background: #2a2420; }
+.stage-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(22, 18, 16, 0.28) 0%, rgba(22, 18, 16, 0) 34%, rgba(22, 18, 16, 0.62) 100%); color: #fff; }
+.stage-tabs { display: flex; justify-content: center; gap: 14px; padding-top: 6px; color: rgba(255, 255, 255, 0.78); font-size: 12px; }
+.stage-tabs .on { color: #fff; font-weight: 700; }
+.stage-play { position: absolute; left: 50%; top: 42%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; background: rgba(255, 255, 255, 0.92); }
+.stage-play::after { content: ''; position: absolute; left: 14px; top: 11px; border-style: solid; border-width: 7px 0 7px 11px; border-color: transparent transparent transparent #16160e; }
+.stage-empty { margin-top: 92px; text-align: center; font-size: 13px; }
+.stage-foot { position: absolute; left: 10px; right: 10px; bottom: 8px; }
+.stage-author { display: flex; align-items: center; gap: 6px; }
+.stage-author i { width: 22px; height: 22px; flex: none; border-radius: 50%; background: #fff; color: #ff2442; font-style: normal; font-size: 10px; font-weight: 700; line-height: 22px; text-align: center; }
+.stage-author b { flex: 1; min-width: 0; overflow: hidden; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+.stage-author > span { flex: none; height: 16px; padding: 0 6px; border-radius: 8px; background: #ff2442; font-size: 10px; line-height: 16px; }
+.stage-foot strong { display: block; margin-top: 6px; overflow: hidden; font-size: 12px; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+.stage-side { display: flex; gap: 8px; margin-top: 6px; font-size: 10px; }
+.stream-top, .board-head, .chat-bar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.stream-top b, .board-head b, .chat-bar b { font-size: 15px; }
+.stream-top span, .board-head span, .chat-bar span { color: #8a847c; font-size: 11px; }
+.stream-card { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f1eee8; }
+.stream-title { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.35; }
+.stream-excerpt { margin: 4px 0 0; color: #5c564e; font-size: 11px; line-height: 1.4; }
+.stream-cover { display: block; width: 100%; height: 92px; margin-top: 6px; border-radius: 8px; object-fit: cover; }
+.stream-meta { margin: 6px 0 0; color: #8a847c; font-size: 10px; }
+.sns-photo-lg { height: 108px; }
+.sns-acts { display: flex; justify-content: space-between; margin-top: 6px; color: #5c564e; font-size: 10px; }
+.circle-rail { display: flex; gap: 8px; margin-bottom: 8px; overflow: hidden; }
+.circle-tile { width: 52px; flex: none; text-align: center; }
+.circle-tile img { display: block; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+.circle-tile b { display: block; margin-top: 4px; overflow: hidden; font-size: 10px; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+.circle-post { display: flex; gap: 8px; margin-bottom: 8px; padding: 6px; border-radius: 12px; background: #fff; }
+.circle-post img { width: 64px; height: 64px; flex: none; border-radius: 8px; object-fit: cover; }
+.circle-post b, .circle-post span { display: block; }
+.circle-post b { font-size: 11px; }
+.circle-post span { margin-top: 2px; color: #5c564e; font-size: 11px; line-height: 1.35; }
+.circle-post i { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 8px; background: #fff1e8; color: #c45c26; font-style: normal; font-size: 10px; line-height: 16px; }
+.board-tile { display: flex; gap: 8px; margin-bottom: 8px; padding: 8px; border-radius: 12px; background: #fff; }
+.board-tile img { width: 48px; height: 48px; flex: none; border-radius: 10px; object-fit: cover; }
+.board-tile b { display: block; font-size: 13px; }
+.board-tile p { margin: 2px 0 0; color: #5c564e; font-size: 11px; line-height: 1.35; }
+.board-tile span { color: #8a847c; font-size: 10px; }
+.scan-row, .find-row, .price-rows article, .note-rows article { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 5px 0; border-bottom: 1px solid #f1eee8; }
+.scan-row img, .find-row img, .note-rows img { width: 22px; height: 22px; flex: none; border-radius: 4px; object-fit: cover; }
+.scan-row b, .find-row b, .note-rows b, .price-rows b { flex: 1; min-width: 0; overflow: hidden; font-size: 12px; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+.scan-row span, .find-row small { flex: none; color: #8a847c; font-size: 10px; }
+.note-rows i { width: 6px; height: 6px; flex: none; border-radius: 50%; background: #ff2442; }
+.discover-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 6px; }
+.discover-grid article { min-width: 0; }
+.discover-grid img { display: block; width: 100%; height: 48px; border-radius: 8px; object-fit: cover; background: #f3e6df; }
+.discover-grid b, .discover-grid span, .hub-grid span {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+  line-height: 1.35;
+}
+.discover-grid b { margin-top: 4px; font-size: 11px; font-weight: 650; }
+.discover-grid span { margin-top: 2px; color: #5c564e; font-size: 10px; }
+.mix-card { margin-bottom: 8px; overflow: hidden; border-radius: 12px; background: #fff; }
+.mix-card img { display: block; width: 100%; height: 84px; object-fit: cover; }
+.mix-card b, .mix-card p { margin: 0; padding: 0 8px; }
+.mix-card b { margin-top: 6px; font-size: 13px; }
+.mix-card p { margin: 2px 0 8px; color: #5c564e; font-size: 11px; line-height: 1.4; }
+.hot-words { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.hot-words span { padding: 3px 8px; border-radius: 999px; background: #fff; color: #5c564e; font-size: 10px; }
+.poster-stack { display: flex; flex-direction: column; gap: 8px; }
+.poster-stack .poster img { height: 84px; }
+.sku-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sku-cards article { overflow: hidden; border: 1px solid #eeeae6; border-radius: 10px; background: #fff; }
+.body.page-mall.skin-card,
+.body.page-mine.skin-grid { background: #f6f5f2; }
+.sku-cards img { display: block; width: 100%; height: 72px; object-fit: cover; }
+.sku-cards b, .sku-cards span, .sku-cards strong { display: block; padding: 0 6px; }
+.sku-cards b { margin-top: 6px; font-size: 12px; line-height: 1.3; }
+.sku-cards span { margin-top: 2px; color: #5c564e; font-size: 10px; line-height: 1.35; white-space: normal; }
+.sku-cards strong { margin: 2px 0 6px; color: #ff2442; font-size: 12px; }
+.price-rows img { width: 28px; height: 28px; flex: none; border-radius: 6px; object-fit: cover; }
+.price-rows strong { flex: none; color: #ff2442; font-size: 12px; }
+.chat { display: flex; flex-direction: column; gap: 6px; min-height: 100%; }
+.chat-line { display: flex; align-items: flex-end; gap: 6px; max-width: 92%; }
+.chat-line.mine { align-self: flex-end; flex-direction: row-reverse; }
+.chat-ava { width: 22px; height: 22px; flex: none; border-radius: 50%; object-fit: cover; }
+.chat-bubble { max-width: 100%; padding: 6px 8px; border-radius: 12px 12px 12px 4px; background: #f4f1ec; color: #16160e; }
+.chat-line.mine .chat-bubble { border-radius: 12px 12px 4px 12px; background: #ff8a9a; color: #3a1520; }
+.chat-bubble p { margin: 0; font-size: 11px; line-height: 1.4; }
+.chat-input { margin-top: auto; height: 24px; border-radius: 12px; background: #f6f4f1; color: #8a847c; font-size: 11px; line-height: 24px; text-align: center; }
+.act-card { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 6px; border-radius: 12px; background: #fff; }
+.act-ava, .act-cover { flex: none; object-fit: cover; }
+.act-ava { width: 28px; height: 28px; border-radius: 50%; }
+.act-cover { width: 42px; height: 42px; border-radius: 8px; }
+.act-card div { flex: 1; min-width: 0; }
+.act-card b { display: block; font-size: 12px; }
+.act-card p { margin: 2px 0 0; color: #5c564e; font-size: 10px; line-height: 1.35; }
+.badge-row { display: flex; gap: 6px; margin: 8px 0; }
+.badge-row span { padding: 3px 6px; border-radius: 999px; background: #fff1e8; color: #c45c26; font-size: 10px; }
+.achieve-note { display: flex; gap: 8px; padding: 8px; border-radius: 12px; background: #fff; }
+.achieve-note img { width: 64px; height: 64px; flex: none; border-radius: 8px; object-fit: cover; }
+.achieve-note b { display: block; font-size: 12px; line-height: 1.35; }
+.achieve-note span { display: block; margin-top: 4px; color: #5c564e; font-size: 11px; line-height: 1.35; }
+.plain-hero { position: relative; height: 92px; margin: 0 -12px 0; }
+.plain-banner { display: block; width: 100%; height: 92px; object-fit: cover; }
+.plain-hero em { position: absolute; left: 12px; bottom: -14px; width: 36px; height: 36px; border: 2px solid #fff; border-radius: 50%; background: #f3e6df; color: #9a4d3a; font-style: normal; font-size: 14px; font-weight: 700; line-height: 32px; text-align: center; }
+.plain-name { display: block; margin: 18px 0 0; font-size: 15px; }
+.plain-bio { margin: 2px 0 8px; color: #5c564e; font-size: 11px; }
+.plain-row { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid #f1eee8; }
+.plain-row img { width: 48px; height: 48px; flex: none; border-radius: 8px; object-fit: cover; }
+.plain-row b { display: block; font-size: 12px; }
+.plain-row span { display: block; margin-top: 2px; color: #5c564e; font-size: 11px; }
+.hub-id { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.hub-id em { width: 36px; height: 36px; flex: none; border-radius: 50%; background: #f3e6df; color: #9a4d3a; font-style: normal; font-size: 14px; font-weight: 700; line-height: 36px; text-align: center; }
+.hub-id b { display: block; font-size: 15px; }
+.hub-id span { display: block; margin-top: 2px; color: #5c564e; font-size: 11px; }
+.hub-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.hub-grid article { min-width: 0; padding: 8px 4px; border-radius: 10px; background: #fff; text-align: center; }
+.hub-grid img { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; }
+.hub-grid span { margin-top: 4px; font-size: 11px; text-align: center; }
 .body.page-community { background: #f6f5f2; padding: 2px 8px 8px; }
 .sns-search {
   display: flex;
@@ -813,8 +1147,10 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
 .xhs-tabs { display: flex; gap: 12px; align-items: baseline; color: #5c564e; font-size: 13px; }
 .xhs-tabs b { color: #16160e; font-size: 14px; }
 .xhs-falls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.xhs-falls article { min-width: 0; padding: 8px; border-radius: 8px; background: #f7f4ef; }
-.xhs-falls b { font-size: 12px; -webkit-line-clamp: 2; }
+.xhs-falls article { min-width: 0; padding: 0 0 8px; border-radius: 8px; background: #f7f4ef; overflow: hidden; }
+.xhs-falls img { display: block; width: 100%; height: 78px; object-fit: cover; }
+.xhs-falls b { display: block; margin: 6px 6px 0; font-size: 12px; -webkit-line-clamp: 2; }
+.xhs-falls span { margin: 4px 6px 0; }
 .xhs-falls span, .xhs-empty { display: block; margin-top: 4px; color: #5c564e; font-size: 11px; }
 .xhs-empty { margin: 16px 0; text-align: center; }
 .chips { display: flex; gap: 4px; margin-bottom: 6px; overflow: hidden; }
@@ -1060,7 +1396,7 @@ function onTab(slot: { id: string; kind: 'plus' | 'tab' }) {
 .msgs.bubbles .msg.self {
   margin-left: auto;
   border-radius: 12px 12px 4px 12px;
-  background: #16160e;
+  background: #ff8a9a;
 }
 .msgs.bubbles .msg.self b,
 .msgs.bubbles .msg.self span { color: #fff; }
